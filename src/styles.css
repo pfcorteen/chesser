@@ -1,0 +1,65 @@
+.board {
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  background-color: SlateGray;
+  border: 4px solid SlateGray;
+  margin: 0 auto;
+}
+.board_square, .promo_square {
+  border: 2px solid SlateGray;
+  float: left;
+  display: flex;
+  align-items: center;
+}
+.board_piece, .promo_piece {
+  color: Black;
+  padding-bottom: 15%;
+  margin: 0 auto;
+}
+.capture_piece {
+    color: Black;
+    padding: 0;
+    margin: 0 auto;
+}
+.config {
+  padding: 0;
+  margin: 0 auto;
+}
+.board_square-light, .promo_square-light { background-color: BlanchedAlmond; }
+.board_square-dark, .promo_square-dark { background-color: DarkGoldenrod; }
+
+.selected { background-color: Plum; }
+
+.stalemate { background-color: DarkOrchid; }
+
+.checked { background-color: Crimson; }
+
+.legal {
+   background-color: Thistle;
+ }
+.attacking.attacked {
+    background-color: DarkMagenta;
+}
+.defending.defended {
+    background-color: Green;
+}
+.attacking {
+   background-color: Red;
+}
+.attacked {
+  background-color: Orange;
+}
+.defending {
+  background-color: Chartreuse;
+}
+.defended {
+  background-color: Yellow;
+}
+
+#captures, #configControls {
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+}
