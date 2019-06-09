@@ -83,7 +83,7 @@ export interface IPieceData {
 }
 export interface ITest extends IMoves {
 	name: string,
-	nextTurn: SIDE,
+	firstTurn: SIDE,
 	testPiece: PID,
 	piecePositions: { [key in PID]: SQID; },
 	pieceData: IPieceData

@@ -11,8 +11,10 @@ export class ComputedMove {
 
   // parts of a move thought up by the program
   private computedMove: IGeneratedMove = {  pid: null, to: null, ppid: null };
+  // private lastMove = '';
 
   compute = (lastMove: string): void => {
+    // this.lastMove = lastMove;
     if (!this.enactedMove.pid) {
       if (lastMove) {
         if (lastMove.endsWith('#')){  // checkmate
@@ -28,9 +30,9 @@ export class ComputedMove {
     }
 
     const compFuncs: Function[] = [
+      this.escapeCapture,
       this.deliverCheck,
       // this.considerCapture,
-      this.escapeCapture,
       this.tryCapture,
       this.kingHunt,
       this.computeRandomMove
@@ -251,7 +253,7 @@ export class ComputedMove {
 
     if (chckrs.length === 1) {
       const
-        control = Game.control,
+        // control = Game.control,
         chckrPid = chckrs[0],
         chckrPiece = control.getPiece(chckrPid),
         attckrs = chckrPiece.getAttckrs(),
@@ -294,8 +296,12 @@ export class ComputedMove {
   private deliverCheck = (): IGeneratedMove => {
     const
       control = Game.control,
+
       nextturn: SIDE = Game.nextTurn,
       lastturn: SIDE = nextturn === 'W' ? 'B' : 'W',
+      // lastturn: SIDE = this.lastMove[0] as SIDE,
+      // nextturn: SIDE = lastturn === 'W' ? 'B' : 'W',
+
       kpid: PID = lastturn + 'K',
       kpiece: Piece = control.getPiece(kpid),
       klegals: SQID[] = kpiece.getLegals(),
@@ -370,6 +376,8 @@ export class ComputedMove {
       control = Game.control,
       nextturn: SIDE = Game.nextTurn,
       lastturn: SIDE = nextturn === 'W' ? 'B' : 'W',
+      // lastturn: SIDE = this.lastMove[0] as SIDE,
+      // nextturn: SIDE = lastturn === 'W' ? 'B' : 'W',
       oppsidePids: PID[] = control.getPidArray(lastturn);
 
     // find all pieces I am attacking and check their defences
@@ -414,9 +422,12 @@ export class ComputedMove {
   private escapeCapture = (): IGeneratedMove => {
     const
       control = Game.control,
+      // lastturn: SIDE = this.lastMove[0] as SIDE,
+      // nextturn: SIDE = lastturn === 'W' ? 'B' : 'W',
       nextturn: SIDE = Game.nextTurn,
       lastturn: SIDE = nextturn === 'W' ? 'B' : 'W',
       movingSidePids: PID[] = control.getPidArray(nextturn);
+      // movingSidePids: PID[] = control.getPidArray(lastturn);
 
     // find all my pieces that are attacked and try to ensure their defences
     let

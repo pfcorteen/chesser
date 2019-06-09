@@ -1,18 +1,37 @@
 [
   {
-    "name":           "test2",
-    "piecePositions": { "BK":"g5","WK":"e1","WKR":"d5","WKP":"e5","BKB":"e7","BKBP":"f7","BKNP":"g6" },
-    "moves":          [["BKBPf5"],["WKPf6ep+"]],
-    "nextTurn":       "B",
-    "testPiece":      "BK",
+    "name":           "escapeCapture5",
+    "piecePositions": {"WK":"e1","WQ":"d6","WQBP":"f6","BQP":"d7","BKP":"e6","BKBP":"f7","BKN":"e7","BK":"f8"},
+    "moves":          ["compute"],
+    "firstTurn":       "B",
+    "testPiece":      "BKN",
     "pieceData": {
-      "legals": ["h6", "h4", "g4", "f4","f6"],
-      "accessors": ["g6", "h7", "h6", "h5", "h4", "h3", "g4", "g3", "g2", "g1", "f3", "f4", "e3", "d2", "c1", "e4", "f5", "e5", "e6", "f7"],
-      "potentials": ["h6","h5","h4","g4","f4","f5","f6"],
-      "attckrs": ["WKR"],
-      "attckng": ["WKP"],
-      "dfndrs":  [],
-      "dfndng":  ["BKNP"]
+      "legals": ["g8", "g6", "f5", "d5", "c6", "c8"],
+      "accessors": ["e8", "f8", "g8", "f7", "g6", "f5", "e6", "d5", "c6", "d7", "c8", "d8"],
+      "potentials": ["g8", "g6", "f5", "d5", "c6", "c8"],
+      "attckrs": ["WQBP", "WQ"],
+      "attckng": [],
+      "dfndrs":  ["BK"],
+      "dfndng":  []
+    }
+  },
+  {
+    "name":           "escapeCheck2",
+    "piecePositions": null,
+    "moves":          ["WQNa3","BKNf6","WQNPb3","BKPe5","WKBPf4","BQNc6","WKBPxe5",
+      "BQNxe5","WKNPg3","BQNg4","WKRPh3","BQNe5","WKNf3","BQNxf3+","compute"],
+    "firstTurn":       "W",
+    "testPiece":      "WKP",
+    "pieceData": {
+      "legals": ["f4"],
+      "accessors": [
+        "f4", "f5", "g5", "g4", "h5", "h4", "g3", "h2", "g2", "h1", "g1", "f2", "f1",
+        "e1", "e2", "d1", "d2", "e3", "d3", "c3", "b3", "d4", "e4", "d5", "c6", "e5"],
+      "potentials": ["f4", "g4", "e4"],
+      "attckrs": [],
+      "attckng": [],
+      "dfndrs":  ["WQ"],
+      "dfndng":  []
     }
   },
   {
@@ -20,7 +39,7 @@
     "piecePositions": null,
     "moves":          ["WQPd3","BKPe5","WKNPg3","BQf6","WQBPc4","BKBc5","WKBPf3","BQNc6","WQNPb4",
       "BKBxb4+","WQNd2","BQNd4","WKRPh3","BQPd6","WQa4+","BQNc6","WKf2","BKPe4","WQRb1","BQd4+","WKPe3","BQf6","compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WQP",
     "pieceData": {
       "legals": ["e5"],
@@ -36,45 +55,26 @@
     }
   },
   {
-    "name":           "escapeCheck2",
-    "piecePositions": null,
-    "moves":          ["WQNa3","BKNf6","WQNPb3","BKPe5","WKBPf4","BQNc6","WKBPxe5",
-      "BQNxe5","WKNPg3","BQNg4","WKRPh3","BQNe5","WKNf3","BQNxf3+","compute"],
-    "nextTurn":       "W",
-    "testPiece":      "WKP",
+    "name":           "test2",
+    "piecePositions": { "BK":"g5","WK":"e1","WKR":"d5","WKP":"e5","BKB":"e7","BKBP":"f7","BKNP":"g6" },
+    "moves":          ["BKBPf5","WKPf6ep+"],
+    "firstTurn":       "B",
+    "testPiece":      "BK",
     "pieceData": {
-      "legals": ["f4"],
-      "accessors": [
-        "f4", "f5", "g5", "g4", "h5", "h4", "g3", "h2", "g2", "h1", "g1", "f2", "f1",
-        "e1", "e2", "d1", "d2", "e3", "d3", "c3", "b3", "d4", "e4", "d5", "c6", "e5"],
-      "potentials": ["f4", "g4", "e4"],
-      "attckrs": [],
-      "attckng": [],
-      "dfndrs":  ["WQ"],
-      "dfndng":  []
-    }
-  },
-  {
-    "name":           "escapeCapture5",
-    "piecePositions": {"WK":"e1","WQ":"d6","WQBP":"f6","BQP":"d7","BKP":"e6","BKBP":"f7","BKN":"e7","BK":"f8"},
-    "moves":          ["compute"],
-    "nextTurn":       "B",
-    "testPiece":      "BKN",
-    "pieceData": {
-      "legals": ["g8", "g6", "f5", "d5", "c6", "c8"],
-      "accessors": ["e8", "f8", "g8", "f7", "g6", "f5", "e6", "d5", "c6", "d7", "c8", "d8"],
-      "potentials": ["g8", "g6", "f5", "d5", "c6", "c8"],
-      "attckrs": ["WQBP", "WQ"],
-      "attckng": [],
-      "dfndrs":  ["BK"],
-      "dfndng":  []
+      "legals": ["h6", "h4", "g4", "f4","f6"],
+      "accessors": ["g6", "h7", "h6", "h5", "h4", "h3", "g4", "g3", "g2", "g1", "f3", "f4", "e3", "d2", "c1", "e4", "f5", "e5", "e6", "f7"],
+      "potentials": ["h6","h5","h4","g4","f4","f5","f6"],
+      "attckrs": ["WKR"],
+      "attckng": ["WKP"],
+      "dfndrs":  [],
+      "dfndng":  ["BKNP"]
     }
   },
   {
     "name":           "escapeCapture4",
     "piecePositions": null,
     "moves":          ["WKNf3","BQPd6","WKNPg4","BQBxg4","WKPe3","BQNd7","WQPd4","BQRPa6","WKe2","BQNc5","WQPxc5","BQPxc5","WKRPh3","BQxd1","compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WK",
     "pieceData": {
       "legals": ["d2", "e2", "e1"],
@@ -93,7 +93,7 @@
       "BK":"a8","BKB":"g6","BKBP":"f7"
     },
     "moves":          ["compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WKR",
     "pieceData": {
       "legals": ["h4", "h2", "h1", "g3", "f3"],
@@ -115,7 +115,7 @@
       "BK":"a8","BKB":"g6"
     },
     "moves":          ["compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WKNP",
     "pieceData": {
       "legals": ["g5"],
@@ -137,7 +137,7 @@
       "BK":"a8","BKNP":"g6"
     },
     "moves":          ["compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WKN",
     "pieceData": {
       "legals": ["g8", "h7", "h5", "g4", "e4", "d5", "d7", "e8"],
@@ -156,7 +156,7 @@
     "name":           "tryCapture4",
     "piecePositions": null,
     "moves":          ["WQRPa3","BKNPg5","WQNPb3","BKPe6","WQBPc3","BKNh6","WKRPh4","compute"],
-    "nextTurn":       "B",
+    "firstTurn":       "B",
     "testPiece":      "BKNP",
     "pieceData": {
       "legals": ["h3"],
@@ -175,7 +175,7 @@
     "name":           "escapeCheckRevisited",
     "piecePositions": null,
     "moves":          ["WKBPf4","BQBPc5","WQNPb4","BQBPxb4","WKNPg4","BQNPb5","WKf2","BQb6+","compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WKP",
     "pieceData": {
       "legals": ["e4"],
@@ -193,7 +193,7 @@
     "name":           "deliverCheck1",
     "piecePositions": {"WK":"e1","BK":"h8","BKP":"h7","WKN":"f4","WQN":"e8","WKR":"h3","WKB":"d5"},
     "moves":          ["compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "BKP",
     "pieceData": {
       "legals": ["h5", "h6", "g6"],
@@ -209,7 +209,7 @@
     "name":           "tryCapture2",
     "piecePositions": null,
     "moves":          ["WKPe4","BKRPh5","WQBPc3","BQNPb5","compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WKB",
     "pieceData": {
       "legals": ["c6","d7","c4","d3","e2","f1","a4","a6"],
@@ -233,7 +233,7 @@
       "WKBPf3","BQNPxa5","WQe1","BQPd6","WQg3","BQNb4","WKBPxg4","BQRb8",
       "WKNPh6","BQPd5","WKPxd5","BQNxc2","WKRPh3","BQNxd4+","WKe3","compute"
     ],
-    "nextTurn":       "B",
+    "firstTurn":       "B",
     "testPiece":      "BQN",
     "pieceData": {
       "legals": ["d4", "e3", "e1", "a1", "a3", "b4"],
@@ -249,7 +249,7 @@
     "name":           "tryCapture1",
     "piecePositions": null,
     "moves":          ["WKNf3","BQPd6","WQBPc4","BKPe5","WQa4+","BKe7","WKPe4","BQNa6","WQd1","BQPd5","compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WKN",
     "pieceData": {
       "legals": ["g5", "h4", "g1", "d4", "e5"],
@@ -270,7 +270,7 @@
       "WKRPh3","BQPd6","WQNa3","BQd7","WKNPg3","BQPd5","WKRPh4","BKPe5","WQNb5","BQxb5","WKBPf3","BQNa6","WQNPb4","BQNxb4",
       "WKf2","BKBc5+","WKPe3","BQRb8","WKBxb5+","BQBPc6","WQPd4","BQBPxb5","WQPxc5","BQNa6","WQxd5","BKBPf5","WQxe5+","BKNe7",
       "WQxg7","BQNxc5","WQxh8+","BKf7","WQxh7+","BKf8","WQh8+","BKNg8","WQh6+","compute"],
-    "nextTurn":       "B",
+    "firstTurn":       "B",
     "testPiece":      "BKN",
     "pieceData": {
       "legals": ["g4", "f7", "g8"],
@@ -286,7 +286,7 @@
     "name":           "pawnMate",
     "piecePositions": {"WK":"e1","BK":"e8","WKP":"d6","WKN":"b8","WKR":"f1","WQB":"h4"},
     "moves":          ["compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WKP",
     "pieceData": {
       "legals": ["d8","e8"],
@@ -303,7 +303,7 @@
     "name":           "test1",
     "piecePositions": {"WK":"g5","BK":"e7","WQ":"h7","WKP":"f7","BKN":"g8","BKP":"e6","BQP":"d6"},
     "moves":          ["WKPxg8=W1R#"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "BK",
     "pieceData": {
       "legals": [],
@@ -319,7 +319,7 @@
     "name":           "test3",
     "piecePositions": null,
     "moves":          ["WKPe4","BKPe5","WKBc4","BKBc5","WKNf3","BKNf5","O-O"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WK",
     "pieceData": {
       "legals": ["h1"],
@@ -335,7 +335,7 @@
     "name":           "test4",
     "piecePositions": null,
     "moves":          ["WQPd4","BQPd5","WKPe4","BQPxe4"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WQ",
     "pieceData": {
       "legals": ["d2","d3","e2","f3","g4","h5"],
@@ -351,7 +351,7 @@
     "name":           "test5",
     "piecePositions": {"BK":"e8","BQR":"a8","BQBP":"c7","BKN":"d6","WK":"e1","WQ":"b6"},
     "moves":          ["O-O-O"],
-    "nextTurn":       "B",
+    "firstTurn":       "B",
     "testPiece":      "BK",
     "pieceData": {
       "legals": ["d7"],
@@ -367,7 +367,7 @@
     "name":           "test6",
     "piecePositions": null,
     "moves":          ["WKPe4","BKPe5","WKNf3","BQNc6","WKBb5","BKBc5","O-O","BKNf6","WQNc3","BQPd6","WQPd4","BKPxd4","WKBxc6","BQNPxc6","WKNxd4"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "BK",
     "pieceData": {
       "legals": ["g8","f8","e7","d7"],
@@ -383,7 +383,7 @@
     "name":           "test7",
     "piecePositions": { "BK":"h8","WK":"f8","BKNP":"g7","WQB":"e5","WKR":"d6" },
     "moves":          ["WKRh6"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "BK",
     "pieceData": {
       "legals": [],
@@ -399,7 +399,7 @@
     "name":           "test8",
     "piecePositions": null,
     "moves":          ["WKPe4","BKPe5","WKNf3","BQNc6","WKBb5","BKNf6","O-O"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WK",
     "pieceData": {
       "legals": ["h1"],
@@ -415,7 +415,7 @@
     "name":           "test9",
     "piecePositions": null,
     "moves":          ["WKPe4","BKBPf5","WKPxf5","BKNPg5","WKPg6ep","BKNh6","WKPxh7","BKRg8","WKPxg8=W1Q"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "W1Q",
     "pieceData": {
       "legals":     ["h8","h7","g7","g6","g5","g4","g3","f7","e6","d5","c4","b3","f8"],
@@ -431,7 +431,7 @@
     "name":           "test10",
     "piecePositions": null,
     "moves":          ["WQPd4","BQPd5","WKNf3","BKNf6","WQBPc4","BQPxc4","WKPe3","BQBPc5","WKBxc4","BKPe6","O-O","BQRPa6","WKBb3","BQNPb5","WQRPa4","BQNPb4","WKPe4","BQBb7","WKPe5","BKNe4","WQNd2","BKNxd2","WQBxd2","BQBPxd4","WKNg5"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "BQB",
     "pieceData": {
       "legals": ["c8","c6","d5","e4","f3","g2"],
@@ -450,7 +450,7 @@
     "name":           "test11",
     "piecePositions": null,
     "moves":          ["WKBPf3","BKPe6","WQNc3","BQh4+"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WKRP",
     "pieceData": {
       "legals": ["h3"],
@@ -466,7 +466,7 @@
     "name":           "thornPawn",
     "piecePositions": {"WK":"e1","BK":"e8","WKP":"e6","BKP":"e7","WKR":"h1"},
     "moves":          ["compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "BK",
     "pieceData": {
       "legals": [],
@@ -482,7 +482,7 @@
     "name":           "knightDeliverCheck",
     "piecePositions": {"WK":"e1","BK":"e8","WKP":"e6","BKP":"e7","WKR":"d1","WQB":"h6","WKN":"d5"},
     "moves":          ["compute"],
-    "nextTurn":       "W",
+    "firstTurn":       "W",
     "testPiece":      "WKN",
     "pieceData": {
       "legals": ["e8","d5","b5","a6","a8"],

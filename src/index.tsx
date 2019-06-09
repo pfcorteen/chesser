@@ -2,7 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { Game } from "./components/Game";
 import { ITest, IScoredMove, BasicPieceRank } from "./components/Model";
-import * as testies from "./tests.json";
+import * as jsontests from "./tests.json";
 
 let redraw = () => {
 	const
@@ -34,28 +34,7 @@ document.body.onload = redraw;
 window.onresize = redraw;
 
 const
-	tests: ITest[] = testies['default'];
-// let tests: ITest[];
-
-const
-// 	loadJSON = (path, success, error): void => {
-// 		var xhr = new XMLHttpRequest();
-// 		xhr.onreadystatechange = function()
-// 		{
-// 			if (xhr.readyState === XMLHttpRequest.DONE) {
-// 				if (xhr.status === 200) {
-// 					if (success)
-// 						// console.log(xhr.responseText);
-// 						success(JSON.parse(xhr.responseText));
-// 				} else {
-// 					if (error)
-// 						error(xhr);
-// 				}
-// 			}
-// 		};
-// 		xhr.open("GET", path, true);
-// 		xhr.send();
-// 	},
+	tests: ITest[] = jsontests['default'],
 	runTests = (doTests = true): void => {
 		let testIdx = 0;
 		if (tests.length) {
@@ -70,16 +49,4 @@ const
 		}
 	};
 
-	// const
-	//   chesser = testies['default'];
-
 runTests(false);
-// loadJSON('tests.json',
-// 	function(testArray) {
-// 		tests = testArray;
-// 		window.setTimeout(runTests, 10, false);
-// 	},
-// 	function(xhr) { console.error(xhr); }
-// );
-
-// ReactDOM.render( <Game test={null} onTestCompleted={null} onRunTests={null}/>, document.getElementById("game") );

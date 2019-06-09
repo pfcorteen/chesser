@@ -27,39 +27,40 @@ export class Game extends React.Component<IGame, IGamePosition> {
   private paused: boolean = false;
 
   public static getDerivedStateFromProps(props, state: IGamePosition): IGamePosition {
+    let newState: IGamePosition = null;
     if (!Game.control || (props.test !== state.test)) {
       const piecePositions = props.test ? props.test.piecePositions : null;
-      // Game.control = Game.control ? Game.control : new GameControl(piecePositions);
       Game.control = new GameControl(piecePositions);
+      Game.nextTurn = props.test ? props.test.firstTurn : Game.nextTurn;
+      newState = {
+        squaresToPieces: Game.control.getSquares(),
+        turn: Game.nextTurn,
+        selectedSquare: null,
+        legals: [] as SQID[],
+        attacking: [] as SQID[],
+        attacked: [] as SQID[],
+        defending: [] as SQID[],
+        defended: [] as SQID[],
+        whiteCaptures: [] as PID[],
+        blackCaptures: [] as PID[],
+        moves: [] as string[],
+        checking: [] as SQID[],
+        promotion: null,
+        test: props.test
+      };
+    } else {
+      newState = state;
+      newState.squaresToPieces = Game.control.getSquares();
     }
 
     Game.control.assemblePieceData();
-
-    let nextState = state;
-    nextState.squaresToPieces = Game.control.getSquares();
-    nextState.test = props.test;
-
-    return nextState;
-    // return {
-    //   squaresToPieces: squaresToPieces,
-    //   turn: Game.nextTurn,
-    //   selectedSquare: (state) ? state.selectedSquare : null,
-    //   legals: (state) ? state.legals : [] as SQID[],
-    //   attacking: (state) ? state.attacking : [] as SQID[],
-    //   attacked: (state) ? state.attacked : [] as SQID[],
-    //   defending: (state) ? state.defending : [] as SQID[],
-    //   defended: (state) ? state.defended : [] as SQID[],
-    //   whiteCaptures: (state) ? state.whiteCaptures : [] as PID[],
-    //   blackCaptures: (state) ? state.blackCaptures : [] as PID[],
-    //   moves: (state) ? state.moves : [] as string[],
-    //   checking: (state) ? state.checking : [] as SQID[],
-    //   promotion: (state) ? state.promotion : null,
-    // };
+    return newState;
   }
 
   constructor(props) {
     super(props);
-    Game.nextTurn = (props.test) ? props.test.nextTurn : Game.firstTurn;
+
+    Game.nextTurn = (props.test) ? props.test.firstTurn : Game.firstTurn;
     this.state = {
       squaresToPieces: null,
       turn: Game.nextTurn,
@@ -298,6 +299,7 @@ export class Game extends React.Component<IGame, IGamePosition> {
       smoves: string[] = [].concat(...this.state.moves),
       last = smoves.length - 1,
       turn = (Game.nextTurn === 'W') ? 'B' : 'W',
+      // turn = (last === -1) ? test.nTurn : (smoves[last][0] === 'W') ? 'B' : 'W',
       legals = this.state.legals,
       attacking = this.state.attacking,
       attacked = this.state.attacked,
