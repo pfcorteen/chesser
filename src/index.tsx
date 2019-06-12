@@ -48,21 +48,3 @@ const tests: ITest[] = jsontests['default'];
 		})();
 	}
 })(false);
-
-// const
-// 	tests: ITest[] = jsontests['default'],
-// 	runTests = (doTests = true): void => {
-// 		let testIdx = 0;
-// 		if (tests.length) {
-// 			(function handleTestCompleted() {
-// 				const test = (tests.length > testIdx) ? tests[testIdx] : null;
-// 				ReactDOM.render(
-// 					<Game test={doTests ? test : null} onTestCompleted={handleTestCompleted} onRunTests={runTests} />,
-// 					document.getElementById('game')
-// 				);
-// 				testIdx += 1;
-// 			})();
-// 		}
-// 	};
-//
-// runTests(false);
