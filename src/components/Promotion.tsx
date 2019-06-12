@@ -6,8 +6,8 @@ export class Promotion extends React.Component<IPromotion, {}> {
 		Promotion.promotionCount += 1;
 		return Promotion.promotionCount;
 	};
-	private static promotionCount = 0;
 
+	private static promotionCount = 0;
 	private pElm: HTMLElement;
 
 	handleClick = (event): void => {
@@ -20,25 +20,26 @@ export class Promotion extends React.Component<IPromotion, {}> {
 			queen = (s === 'W') ? 'WQ' : 'BQ',
 			rook = (s === 'W') ? 'WR' : 'BR',
 			bishop = (s === 'W') ? 'WB' : 'BB',
-			knight = (s === 'W') ? 'WN' : 'BN';
+			knight = (s === 'W') ? 'WN' : 'BN',
+			handleClick = this.handleClick.bind(this);
 
 		return (
 			<div ref={(ref) => this.pElm = ref} className='promotion'>
 				<div className='promo_square promo_square-light'>
 					<span className={'promo_piece'} id={queen}
-					      onClick={this.handleClick.bind(this)}>{PIECE_ICONS[queen]}</span>
+					      onClick={ handleClick }>{PIECE_ICONS[queen]}</span>
 				</div>
 				<div className='promo_square promo_square-dark'>
 					<span className={'promo_piece'} id={rook}
-					      onClick={this.handleClick.bind(this)}>{PIECE_ICONS[rook]}</span>
+					      onClick={ handleClick }>{PIECE_ICONS[rook]}</span>
 				</div>
 				<div className='promo_square promo_square-light'>
 					<span className={'promo_piece'} id={bishop}
-					      onClick={this.handleClick.bind(this)}>{PIECE_ICONS[bishop]}</span>
+					      onClick={ handleClick }>{PIECE_ICONS[bishop]}</span>
 				</div>
 				<div className='promo_square promo_square-dark'>
 					<span className={'promo_piece'} id={knight}
-					      onClick={this.handleClick.bind(this)}>{PIECE_ICONS[knight]}</span>
+					      onClick={ handleClick }>{PIECE_ICONS[knight]}</span>
 				</div>
 			</div>
 		);

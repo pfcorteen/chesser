@@ -29,34 +29,16 @@
 }
 .board_square-light, .promo_square-light { background-color: BlanchedAlmond; }
 .board_square-dark, .promo_square-dark { background-color: DarkGoldenrod; }
-
 .selected { background-color: Plum; }
-
 .stalemate { background-color: DarkOrchid; }
-
 .checked { background-color: Crimson; }
-
-.legal {
-   background-color: Thistle;
- }
-.attacking.attacked {
-    background-color: DarkMagenta;
-}
-.defending.defended {
-    background-color: Green;
-}
-.attacking {
-   background-color: Red;
-}
-.attacked {
-  background-color: Orange;
-}
-.defending {
-  background-color: Chartreuse;
-}
-.defended {
-  background-color: Yellow;
-}
+.legal { background-color: Thistle; }
+.attacking.attacked { background-color: DarkMagenta; }
+.defending.defended { background-color: Green; }
+.attacking { background-color: Red; }
+.attacked { background-color: Orange; }
+.defending { background-color: Chartreuse; }
+.defended { background-color: Yellow; }
 
 #captures, #configControls {
   margin: 0 auto;

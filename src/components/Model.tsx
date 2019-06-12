@@ -91,7 +91,7 @@ export interface ITest extends IMoves {
 export interface IGame {
 	test: ITest | null;
 	onTestCompleted: () => void;
-	onRunTests: () => void;
+	onRunTests: (boolean) => void;
 }
 export interface IGamePosition extends IPosition, IMove {
 	whiteCaptures: PID[];
@@ -176,6 +176,7 @@ export interface IDeconMove  {
 export type PLAYER = "human" | "computer";
 export type PLAYERS = [PLAYER, PLAYER] | "test";
 export interface IConfigControl {
+	onNewGameRequest: () => void;
 	onPlayerChange: (players: string) => void;
 	onFlipOrientation: () => void;
 	onFlipSquareHighlights: () => void;

@@ -259,13 +259,16 @@ export class Game extends React.Component<IGame, IGamePosition> {
         promotion: prmtn
       })
     });
-  }
+};
+  handleNewGameRequest = (): void => {
+       this.props.onRunTests(false);
+ }
   handlePlayerSelection = (ps: string): void => {
     if (this.paused) { return; }
 
     if (ps === "test") {
       console.log("test");
-      this.props.onRunTests();
+      this.props.onRunTests(true);
     } else {
       const
         players: PLAYERS = ps.split(' v ') as PLAYERS,
@@ -446,6 +449,7 @@ export class Game extends React.Component<IGame, IGamePosition> {
     return (
       <div className={"game"}>
         <ConfigurationControls
+          onNewGameRequest ={this.handleNewGameRequest.bind(this)}
           onPlayerChange={this.handlePlayerSelection.bind(this)}
           onFlipOrientation={this.handleFlipOrientation.bind(this)}
           onFlipSquareHighlights={this.handleFlipSquareHighlights.bind(this)}

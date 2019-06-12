@@ -29,10 +29,9 @@ export class ComputedMove {
       }
     }
 
-    const compFuncs: Function[] = [
+    const strategies: Function[] = [
       this.escapeCapture,
       this.deliverCheck,
-      // this.considerCapture,
       this.tryCapture,
       this.kingHunt,
       this.computeRandomMove
@@ -40,8 +39,8 @@ export class ComputedMove {
 
     if (this.computedMove.pid === null) {
       let generatedMove: IGeneratedMove = null;
-      for (let idx = 0; idx < compFuncs.length; idx += 1) {
-        const func = compFuncs[idx];
+      for (let idx = 0; idx < strategies.length; idx += 1) {
+        const func = strategies[idx];
         if (generatedMove = func()) {
           this.computedMove = generatedMove;
           break;
@@ -65,17 +64,6 @@ export class ComputedMove {
     });
     return sortedPidsAndRanks;
   }
-  // private lowestRankedPids = (pids: PID[]): PID[] => {
-  //   if (pids.length === 0) { return pids; }
-  //   pids = this.sortPidsByLowestRank(pids);
-  //   const
-  //     pid = pids[0],
-  //     rank = BasicPieceRank[pid[pid.length - 1]];
-  //   return pids.filter(p => {
-  //     const r = BasicPieceRank[p[p.length - 1]];
-  //     if (r === rank) { return p; }
-  //   });
-  // }
   private sortPidsByLowestRank = (pids: PID[]): PID[] => {
     // Kings always last in exchange
     return pids.sort((apid, bpid) => { // rank by lowest piece value first
@@ -153,55 +141,51 @@ export class ComputedMove {
       oppKAccessors: SQID[] = oppKpiece.getAccessors(),
       pids: PID[] = control.getPidArray(Game.nextTurn);
 
-    // if (oppKlegals.length) {
-    //   // king can still move - can we limit its moves?
-    // } else {
-      // king can't move - can it be attacked?
-      let pidToFroms: PID_FROM_TO[] = [];
-      pids.forEach(pid => {
-        const
-          piece = control.getPiece(pid),
-          drctns = piece.directions,
-          legals = piece.getLegals();
-        oppKAccessors.forEach(to => {
-          legals.forEach((from) => {
-            // find potential lines of attack
-            const drctn = Board.getDirection(from, to);
-            if (drctns.includes(drctn)) {
-              if (this.isMoveAllowed(pid, drctn, from, to)) {
-                const kdrctn = Board.getDirection(to, oppKsqid);
-                if (drctns.includes(kdrctn)) {
-                  const alignedPiece = Board.alignedWith(from, drctn);
-                  // eliminate where direction from 'to' square to attacked king is not avaliable to attacking piece
-                  if (!alignedPiece || (alignedPiece.getSide() === oppside && alignedPiece.getSqid() === to)) {
-                    const pidtofrom: PID_FROM_TO = [pid, from, to];
-                    pidToFroms.push(pidtofrom);
-                  }
+    let pidToFroms: PID_FROM_TO[] = [];
+    pids.forEach(pid => {
+      const
+        piece = control.getPiece(pid),
+        drctns = piece.directions,
+        legals = piece.getLegals();
+      oppKAccessors.forEach(to => {
+        legals.forEach((from) => {
+          // find potential lines of attack
+          const drctn = Board.getDirection(from, to);
+          if (drctns.includes(drctn)) {
+            if (this.isMoveAllowed(pid, drctn, from, to)) {
+              const kdrctn = Board.getDirection(to, oppKsqid);
+              if (drctns.includes(kdrctn)) {
+                const alignedPiece = Board.alignedWith(from, drctn);
+                // eliminate where direction from 'to' square to attacked king is not avaliable to attacking piece
+                if (!alignedPiece || (alignedPiece.getSide() === oppside && alignedPiece.getSqid() === to)) {
+                  const pidtofrom: PID_FROM_TO = [pid, from, to];
+                  pidToFroms.push(pidtofrom);
                 }
               }
             }
-          });
-        })
-      });
+          }
+        });
+      })
+    });
 
-      let scoredMoves: IScoredMove[] = [];
-      pidToFroms.forEach(([pid, from, to]) => {
-        const piece = control.getPiece(pid);
-        if (!piece.isPinned(from)) {
-          const score = this.squareValueReOccupy([pid, from]);
-          scoredMoves.push({ pid: pid, to: from, ppid: this.promo(from, to), score: score });
-        }
-      });
-
-      let computedMove: IGeneratedMove = null;
-      if (scoredMoves.length) {
-        scoredMoves.sort(this.scorer);
-        let mv = scoredMoves[0];
-        if (mv.score >= 0) { // must be some advantage
-          computedMove = { pid: mv.pid, to: mv.to, ppid: mv.ppid };
-        }
+    let scoredMoves: IScoredMove[] = [];
+    pidToFroms.forEach(([pid, from, to]) => {
+      const piece = control.getPiece(pid);
+      if (!piece.isPinned(from)) {
+        const score = this.squareValueReOccupy([pid, from]);
+        scoredMoves.push({ pid: pid, to: from, ppid: this.promo(from, to), score: score });
       }
-      return computedMove;
+    });
+
+    let computedMove: IGeneratedMove = null;
+    if (scoredMoves.length) {
+      scoredMoves.sort(this.scorer);
+      let mv = scoredMoves[0];
+      if (mv.score >= 0) { // must be some advantage
+        computedMove = { pid: mv.pid, to: mv.to, ppid: mv.ppid };
+      }
+    }
+    return computedMove;
   }
   private computeRandomMove = (): void => {
     const
@@ -299,8 +283,6 @@ export class ComputedMove {
 
       nextturn: SIDE = Game.nextTurn,
       lastturn: SIDE = nextturn === 'W' ? 'B' : 'W',
-      // lastturn: SIDE = this.lastMove[0] as SIDE,
-      // nextturn: SIDE = lastturn === 'W' ? 'B' : 'W',
 
       kpid: PID = lastturn + 'K',
       kpiece: Piece = control.getPiece(kpid),
@@ -359,17 +341,6 @@ export class ComputedMove {
     }
     return generatedMove;
   }
-
-  // private considerCapture = (): IGeneratedMove => {
-  //   const
-  //     generatedCapture: IGeneratedMove = this.tryCapture(),
-  //     generatedEscapeCapture: IGeneratedMove = this.escapeCapture();
-  //
-  //
-  //   return generatedCapture
-  //             ? generatedEscapeCapture
-  //                 ? generatedCapture.
-  // }
 
   private tryCapture = (): IGeneratedMove => {
     const
@@ -553,18 +524,10 @@ export class ComputedMove {
       cpRank = cpid ? BasicPieceRank[cpid[cpid.length - 1]] : 0,
       cpiece = control.getPiece(cpid); // piece for capture
 
-    let attckrs: PID[], dfndrs: PID[]; // correspond to moving side & opposite side respectively
-    // if (cpiece) {
-    //   // if piece on square then must be oppside else illegal move!
-    //   if (cpid[0] === mpid[0])
-    //   { throw Error(`piece attempt move to square occupied by piece of same side`); }
-    //
-    //   attckrs = cpiece.getAttckrs();
-    //   dfndrs = cpiece.getDfndrs();
-    // } else {
-      let [whites, blacks] = control.squareExchangers([mpid, sqid]);
+    let
+      attckrs: PID[], dfndrs: PID[], // correspond to moving side & opposite side respectively
+      [whites, blacks] = control.squareExchangers([mpid, sqid]);
       [attckrs, dfndrs] = (mside === 'W') ? [whites, blacks] : [blacks, whites];
-    // }
 
     attckrs = attckrs.filter(pid => {
       return pid !== mpid;
