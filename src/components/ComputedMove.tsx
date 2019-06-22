@@ -11,10 +11,8 @@ export class ComputedMove {
 
   // parts of a move thought up by the program
   private computedMove: IGeneratedMove = {  pid: null, to: null, ppid: null };
-  // private lastMove = '';
 
   compute = (lastMove: string): void => {
-    // this.lastMove = lastMove;
     if (!this.enactedMove.pid) {
       if (lastMove) {
         if (lastMove.endsWith('#')){  // checkmate
@@ -30,9 +28,10 @@ export class ComputedMove {
     }
 
     const strategies: Function[] = [
-      this.escapeCapture,
+      this.considerCaptures,
+      // this.escapeCapture,
+      // this.tryCapture,
       this.deliverCheck,
-      this.tryCapture,
       this.kingHunt,
       this.computeRandomMove
     ];
@@ -341,14 +340,22 @@ export class ComputedMove {
     }
     return generatedMove;
   }
+  private considerCaptures = (): IGeneratedMove => {
+     const
+          escapeCapture: IScoredMove = this.escapeCapture(),
+          tryCapture: IScoredMove = this.tryCapture(),
+          move = (escapeCapture && tryCapture)
+               ? (escapeCapture.score > tryCapture.score) ? escapeCapture : tryCapture
+               : escapeCapture || tryCapture;
 
-  private tryCapture = (): IGeneratedMove => {
+     return (move && move.score >= 0) ? { pid: move.pid, to: move.to, ppid: move.ppid } : null;
+  }
+  // private tryCapture = (): IGeneratedMove => {
+  private tryCapture = (): IScoredMove => {
     const
       control = Game.control,
       nextturn: SIDE = Game.nextTurn,
       lastturn: SIDE = nextturn === 'W' ? 'B' : 'W',
-      // lastturn: SIDE = this.lastMove[0] as SIDE,
-      // nextturn: SIDE = lastturn === 'W' ? 'B' : 'W',
       oppsidePids: PID[] = control.getPidArray(lastturn);
 
     // find all pieces I am attacking and check their defences
@@ -379,31 +386,24 @@ export class ComputedMove {
       scoredMoves.push({ pid: pid, to: to, ppid: ppid, score: score });
     });
 
-    let generatedMove: IGeneratedMove = null;
+    let scoredMove: IScoredMove = null;
     if (scoredMoves.length) {
      scoredMoves.sort(this.scorer);
-     let mv = scoredMoves[0];
-     if (mv.score >= 0) { // must be some advantage
-       generatedMove = { pid: mv.pid, to: mv.to, ppid: mv.ppid };
-     }
+     return scoredMoves[0];
     }
-    return generatedMove;
+    return scoredMove;
   }
 
-  private escapeCapture = (): IGeneratedMove => {
+  private escapeCapture = (): IScoredMove => {
+ // private escapeCapture = (): IGeneratedMove => {
     const
       control = Game.control,
-      // lastturn: SIDE = this.lastMove[0] as SIDE,
-      // nextturn: SIDE = lastturn === 'W' ? 'B' : 'W',
       nextturn: SIDE = Game.nextTurn,
       lastturn: SIDE = nextturn === 'W' ? 'B' : 'W',
       movingSidePids: PID[] = control.getPidArray(nextturn);
-      // movingSidePids: PID[] = control.getPidArray(lastturn);
 
     // find all my pieces that are attacked and try to ensure their defences
-    let
-      scoredMoves: IScoredMove[] = [],
-      generatedMove: IGeneratedMove = null;
+    let scoredMoves: IScoredMove[] = [];
 
     movingSidePids.forEach((mpid) => {
       const
@@ -421,17 +421,19 @@ export class ComputedMove {
       }
     });
 
+    let scoredMove: IScoredMove = null;
     scoredMoves.sort(this.scorer);
     let mv = scoredMoves.length ? scoredMoves[0] : null;
     if (mv && mv.score >= 0) {
       // defend against highest scored attack
       // either move out of attack, take attacking piece or intercept the attack
       // console.log(`We should mitigate this attack - pid: ${mv.pid}, to: ${mv.to}, severity: ${mv.score}`);
-      generatedMove = this.defendPieceOnSqid([mv.pid, mv.to]);
+      scoredMove = this.defendPieceOnSqid([mv.pid, mv.to]);
     }
-    return generatedMove;
+    return scoredMove;
   }
-  private defendPieceOnSqid = ([apid, to]: PID_TO): IGeneratedMove => {
+
+  private defendPieceOnSqid = ([apid, to]: PID_TO): IScoredMove => {
     const
       control = Game.control,
       attackedPid = control.getPid(to),
@@ -441,7 +443,7 @@ export class ComputedMove {
 
     let
       scoredMoves: IScoredMove[] = [],
-      generatedMove: IGeneratedMove = null;
+      scoredMove: IScoredMove = null;
 
     if (attackedAttckrs.length === 1) {
       const
@@ -506,13 +508,11 @@ export class ComputedMove {
       });
 
       scoredMoves.sort(this.scorer);
-      let mv = scoredMoves.length ? scoredMoves[0] : null;
-      if (mv && mv.score >= 0) {
-        generatedMove = { pid: mv.pid, to: mv.to, ppid: mv.ppid };
-      }
-    }
-    return generatedMove;
+   }
+
+    return scoredMoves.length ? scoredMoves[0] : null;
   }
+
   squareValueReOccupy = ([mpid, sqid]: PID_TO): number => {
     // nextTurn is taken from mPid - analysis for single move basis
     const

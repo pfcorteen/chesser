@@ -184,6 +184,7 @@ export interface IConfigControl {
 }
 
 export type GAME_RESULT = '1-0' | '0-1' | '1/2-1/2';
+
 export interface IGeneratedMove {
 	pid: PID;
 	to: SQID;
