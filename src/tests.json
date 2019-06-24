@@ -1,23 +1,5 @@
 [
      {
-       "name":           "badQueenMove",
-       "piecePositions": null,
-       "moves":          ["WKPe4","BKPe5","WQf3","BQNc6","WQc3","BKBb4","WQe3","BQe7","WQh3","BQPd5","compute"],
-       "firstTurn":       "W",
-       "testPiece":      "WKP",
-       "pieceData": {
-         "legals": ["f4"],
-         "accessors": [
-           "f4", "f5", "g5", "g4", "h5", "h4", "g3", "h2", "g2", "h1", "g1", "f2", "f1",
-           "e1", "e2", "d1", "d2", "e3", "d3", "c3", "b3", "d4", "e4", "d5", "c6", "e5"],
-         "potentials": ["f4", "g4", "e4"],
-         "attckrs": [],
-         "attckng": [],
-         "dfndrs":  ["WQ"],
-         "dfndng":  []
-       }
-     },
-     {
        "name":           "escapeCapture5",
        "piecePositions": {"WK":"e1","WQ":"d6","WQBP":"f6","BQP":"d7","BKP":"e6","BKBP":"f7","BKN":"e7","BK":"f8"},
        "moves":          ["compute"],
@@ -30,6 +12,24 @@
          "attckrs": ["WQBP", "WQ"],
          "attckng": [],
          "dfndrs":  ["BK"],
+         "dfndng":  []
+       }
+     },
+     {
+       "name":           "badQueenMove",
+       "piecePositions": null,
+       "moves":          ["WKPe4","BKPe5","WQf3","BQNc6","WQc3","BKBb4","WQe3","BQe7","WQh3","BQPd5","compute"],
+       "firstTurn":       "W",
+       "testPiece":      "WKNP",
+       "pieceData": {
+         "legals": ["g5"],
+         "accessors": [
+           "g5", "g6", "h6", "h5", "h4", "h3", "h2", "g3", "g2", "g1", "f2", "f3", "e2",
+           "d1", "e3", "f4", "e4", "f5", "e6", "d7", "f6"],
+         "potentials": ["g5", "h5", "f5"],
+         "attckrs": ["BQB"],
+         "attckng": [],
+         "dfndrs":  ["WQ"],
          "dfndng":  []
        }
      },
