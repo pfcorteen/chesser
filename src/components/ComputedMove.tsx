@@ -128,6 +128,7 @@ export class ComputedMove {
           elmnt.click();
      }
      private kingHunt = (): IGeneratedMove => {
+          // console.log(' entered kingHunt');
           // if the opponent king cannot move legally, find a way to attack it,
           // otherwise can the kings legal positions be reduced.
           const
@@ -187,6 +188,7 @@ export class ComputedMove {
           return computedMove;
      }
      private computeRandomMove = (): void => {
+          // console.log(' entered computeRandomMove');
           const
                control = Game.control,
                pids: PID[] = control.getPidArray(Game.nextTurn)
@@ -223,6 +225,7 @@ export class ComputedMove {
           this.computedMove = nextMove;
      }
      private escapeCheck = (lastMove: string): void => {
+          // console.log(' entered escapeCheck');
           const
                control = Game.control,
                checkingSide: SIDE = lastMove[0] as SIDE,
@@ -277,6 +280,7 @@ export class ComputedMove {
           this.computedMove = { pid: mv.pid, to: mv.to, ppid: mv.ppid };
      }
      private deliverCheck = (): IGeneratedMove => {
+          // console.log(' entered deliverCheck');
           const
                control = Game.control,
 
@@ -341,6 +345,7 @@ export class ComputedMove {
           return generatedMove;
      }
      private considerCaptures = (): IGeneratedMove => {
+          // console.log(' entered considerCaptures');
           const
                escapeCapture: IScoredMove = this.escapeCapture(),
                tryCapture: IScoredMove = this.tryCapture(),
@@ -352,6 +357,7 @@ export class ComputedMove {
      }
      // private tryCapture = (): IGeneratedMove => {
      private tryCapture = (): IScoredMove => {
+          // console.log(' entered tryCapture');
           const
                control = Game.control,
                nextturn: SIDE = Game.nextTurn,
@@ -395,7 +401,7 @@ export class ComputedMove {
      }
 
      private escapeCapture = (): IScoredMove => {
-          // private escapeCapture = (): IGeneratedMove => {
+          // console.log(' entered escapeCapture');
           const
                control = Game.control,
                nextturn: SIDE = Game.nextTurn,
@@ -428,13 +434,16 @@ export class ComputedMove {
           if (mv && mv.score >= 0) {
                // defend against highest scored attack
                // either move out of attack, take attacking piece or intercept the attack
+               // either way we save the value of the piece so add that onto the score
                // console.log(`We should mitigate this attack - pid: ${mv.pid}, to: ${mv.to}, severity: ${mv.score}`);
                scoredMove = this.defendPieceOnSqid([mv.pid, mv.to]);
+               scoredMove.score += mv.score;
           }
           return scoredMove;
      }
 
      private defendPieceOnSqid = ([apid, to]: PID_TO): IScoredMove => {
+          // console.log(' entered defendPieceOnSqid');
           const
                control = Game.control,
                attackedPid = control.getPid(to),
