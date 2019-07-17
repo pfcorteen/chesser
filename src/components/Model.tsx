@@ -197,7 +197,7 @@ export interface IScoredMove extends IGeneratedMove {
      score: number;
 }
 export const BasicPieceRank = {
-     'K': 2,
+     'K': 1000,
      'Q': 9,
      'R': 5,
      'B': 4,

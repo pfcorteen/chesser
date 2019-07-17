@@ -6,13 +6,57 @@ import { Board } from "./Board";
 
 export class ComputedMove {
 
+     private static scoredMoveRegister = (): Function => {
+          const movehasher = function hashCode(s) {
+              let h;
+              for(let i = 0; i < s.length; i++)
+                    h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+
+              return h;
+          };
+
+          let moveToScoreArray: number[] = [];
+
+          return function(move: IGeneratedMove, score?: number): number {
+               const
+                    moveStr = move.pid + move.to + ((move.ppid) ? move.ppid : ''),
+                    hashedIdx = movehasher(moveStr)
+
+               if (move.pid === null) {
+                    moveToScoreArray = [];
+               } else if (typeof score !== undefined) {
+                    moveToScoreArray[hashedIdx] = score;
+               }
+               return moveToScoreArray[hashedIdx];
+          };
+     }
+
+
      // keep track of which parts of a move have been enacted
      private enactedMove: IGameMove = { pid: null, to: null, ppid: null, result: null };
 
      // parts of a move thought up by the program
      private computedMove: IGeneratedMove = { pid: null, to: null, ppid: null };
+     private dudMove: IGeneratedMove = { pid: null, to: null, ppid: null };
+
+     private scoreMoves = ComputedMove.scoredMoveRegister();
 
      compute = (lastMove: string): void => {
+          const pids: PID[] = Game.control.getPidArray('W');
+          // pids.forEach((pid, idx) => {
+          //      // Test scoredMoveRegister
+          //      const
+          //           piece = Game.control.getPiece(pid),
+          //           sqid = piece.getSqid(),
+          //           move: IGeneratedMove = { pid: pid, to: sqid, ppid: null };
+          //      if (this.scoreMoves(move) === undefined) {
+          //           this.scoreMoves(move, idx);
+          //           console.log('added ' + move + ' val ' + idx);
+          //      } else {
+          //           console.log('duplicate');
+          //      }
+          // });
+
           if (!this.enactedMove.pid) {
                if (lastMove) {
                     if (lastMove.endsWith('#')) {  // checkmate
@@ -29,15 +73,16 @@ export class ComputedMove {
 
           const strategies: Function[] = [
                this.considerCaptures,
-               // this.escapeCapture,
-               // this.tryCapture,
                this.deliverCheck,
                this.kingHunt,
-               this.computeRandomMove
+               this.computeBestMove
+               // this.computeRandomMove
           ];
 
           if (this.computedMove.pid === null) {
                let generatedMove: IGeneratedMove = null;
+               this.scoreMoves(this.dudMove); // set up fresh scoredMoves list
+
                for (let idx = 0; idx < strategies.length; idx += 1) {
                     const func = strategies[idx];
                     if (generatedMove = func()) {
@@ -156,7 +201,7 @@ export class ComputedMove {
                                    const kdrctn = Board.getDirection(to, oppKsqid);
                                    if (drctns.includes(kdrctn)) {
                                         const alignedPiece = Board.alignedWith(from, drctn);
-                                        // eliminate where direction from 'to' square to attacked king is not avaliable to attacking piece
+                                        // eliminate where direction from 'to' square to attacked king is not available for attacking piece
                                         if (!alignedPiece || (alignedPiece.getSide() === oppside && alignedPiece.getSqid() === to)) {
                                              const pidtofrom: PID_FROM_TO = [pid, from, to];
                                              pidToFroms.push(pidtofrom);
@@ -187,42 +232,84 @@ export class ComputedMove {
           }
           return computedMove;
      }
-     private computeRandomMove = (): void => {
-          // console.log(' entered computeRandomMove');
+     // private computeRandomMove = (): void => {
+     //      // console.log(' entered computeRandomMove');
+     //      const
+     //           control = Game.control,
+     //           pids: PID[] = control.getPidArray(Game.nextTurn)
+     //
+     //      let
+     //           nextMove: IGeneratedMove = { pid: null, to: null, ppid: null },
+     //           mpid: PID,
+     //           mpiece: Piece,
+     //           mlegals: SQID[],
+     //           mto: SQID;
+     //
+     //      while (true) {
+     //           if (pids.length) {
+     //                mpid = pids[~~(Math.random() * pids.length)];
+     //                mpiece = control.getPiece(mpid);
+     //                mlegals = mpiece.getLegals();
+     //
+     //                if (mlegals.length) {
+     //                     nextMove.pid = mpid;
+     //                     break;
+     //                } else {
+     //                     pids.splice(pids.indexOf(mpid), 1);
+     //                }
+     //           } else {
+     //                console.log('zugzwang??');
+     //           }
+     //      }
+     //
+     //      mto = mlegals[~~(Math.random() * mlegals.length)];
+     //
+     //      nextMove.to = mto;
+     //      nextMove.ppid = this.promo(mpid, mto);
+     //
+     //      this.computedMove = nextMove;
+     // }
+     private computeBestMove = (): IGeneratedMove => {
+          // console.log(' entered computeBestMove');
           const
                control = Game.control,
-               pids: PID[] = control.getPidArray(Game.nextTurn)
+               pids: PID[] = control.getPidArray(Game.nextTurn),
+               scoredMoves: IScoredMove[] = [];
 
-          let
-               nextMove: IGeneratedMove = { pid: null, to: null, ppid: null },
-               mpid: PID,
-               mpiece: Piece,
-               mlegals: SQID[],
-               mto: SQID;
+          pids.forEach(pid => {
+               const
+                    piece = control.getPiece(pid),
+                    legals = piece.getLegals();
 
-          while (true) {
-               if (pids.length) {
-                    mpid = pids[~~(Math.random() * pids.length)];
-                    mpiece = control.getPiece(mpid);
-                    mlegals = mpiece.getLegals();
-
-                    if (mlegals.length) {
-                         nextMove.pid = mpid;
-                         break;
-                    } else {
-                         pids.splice(pids.indexOf(mpid), 1);
+               legals.forEach(sqid => {
+                    if (!piece.isPinned(sqid)) {
+                         const score = this.squareValueReOccupy([pid, sqid]);
+                         scoredMoves.push(
+                              { pid: pid, to: sqid, ppid: this.promo(pid, sqid), score: score }
+                         );
                     }
-               } else {
-                    console.log('zugzwang??');
-               }
+               });
+          });
+
+          let generatedMove: IGeneratedMove = null;
+          if (scoredMoves.length) {
+               scoredMoves.sort(this.scorer);
+               let
+                    prevScore: number,
+                    bestMoves = scoredMoves.filter((move, idx) => {
+                         if (prevScore === undefined) {
+                              prevScore = move.score;
+                         } else if (move.score < prevScore) {
+                              return false;
+                         }
+                         return true;
+                    });
+
+               let mv = bestMoves[~~(Math.random() * bestMoves.length)];
+
+               generatedMove = { pid: mv.pid, to: mv.to, ppid: mv.ppid };
           }
-
-          mto = mlegals[~~(Math.random() * mlegals.length)];
-
-          nextMove.to = mto;
-          nextMove.ppid = this.promo(mpid, mto);
-
-          this.computedMove = nextMove;
+          return generatedMove;
      }
      private escapeCheck = (lastMove: string): void => {
           // console.log(' entered escapeCheck');
@@ -437,7 +524,7 @@ export class ComputedMove {
                // either way we save the value of the piece so add that onto the score
                // console.log(`We should mitigate this attack - pid: ${mv.pid}, to: ${mv.to}, severity: ${mv.score}`);
                scoredMove = this.defendPieceOnSqid([mv.pid, mv.to]);
-               scoredMove.score += mv.score;
+               scoredMove && (scoredMove.score += mv.score);
           }
           return scoredMove;
      }
@@ -525,6 +612,12 @@ export class ComputedMove {
 
      squareValueReOccupy = ([mpid, sqid]: PID_TO): number => {
           // nextTurn is taken from mPid - analysis for single move basis
+
+          let retScoreVal: number;
+          if ((retScoreVal = this.scoreMoves({pid: mpid, to: sqid, ppid: null })) !== undefined) {
+               return retScoreVal;
+          }
+
           const
                control = Game.control,
                mpiece = control.getPiece(mpid), // proposed piece for moving
@@ -541,7 +634,15 @@ export class ComputedMove {
 
           attckrs = attckrs.filter(pid => { return pid !== mpid; });
 
-          if (IS_KING.test(mpid) && dfndrs.length) { return -mpRank; };
+          if (IS_KING.test(mpid) && dfndrs.length) {
+               if (dfndrs.length === 1 && control.getPiece(dfndrs[0]).isPinned(sqid)) {
+                    dfndrs.length = 0;
+               } else {
+                    retScoreVal = -mpRank;
+                    this.scoreMoves({pid: mpid, to: sqid, ppid: null }, retScoreVal);
+                    return retScoreVal;
+               }
+          };
 
           const attckrsWithRank = this.sortPidsAndRank(attckrs);
           const dfndrsWithRank = this.sortPidsAndRank(dfndrs);
@@ -572,10 +673,14 @@ export class ComputedMove {
                attckrMove = !attckrMove;
 
                if (!attckrMove && (dfndrScore > attckrScore)) {
-                    return attckrScore - dfndrScore;
+                    retScoreVal = attckrScore - dfndrScore;
+                    this.scoreMoves({pid: mpid, to: sqid, ppid: null }, retScoreVal);
+                    return retScoreVal;
                }
           }
 
-          return (attckrScore >= dfndrScore) ? attckrScore - dfndrScore : -(dfndrScore - attckrScore);
+          retScoreVal = (attckrScore >= dfndrScore) ? attckrScore - dfndrScore : -(dfndrScore - attckrScore);
+          this.scoreMoves({pid: mpid, to: sqid, ppid: null }, retScoreVal);
+          return retScoreVal;
      }
 }

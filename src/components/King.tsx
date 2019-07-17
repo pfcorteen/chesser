@@ -36,19 +36,50 @@ export class King extends Piece {
 		for (const drctn of this.directions) {
 			let
 				sqid = this.sqid, // this is a King!
-				ppPiece: Piece = null,
+				pinnedPiece: Piece = null,
 				checkPin = false;
 			while(sqid = Board.nextSquare(drctn, sqid)) {
 				let pid: PID = null;
 				if ((pid = control.getPid(sqid)) && !(IS_KING.test(pid))) {
 					const piece = control.getPiece(pid);
 					if (piece.getSide() === this.getSide()) {
-						ppPiece = piece;
+						pinnedPiece = piece;
 						if (checkPin) { break; }
 						checkPin = true;
 					} else {
 						if (checkPin) {
-							piece.directions.includes(drctn) ? ppPiece.setKPin(drctn) : ppPiece.setKPin(null);
+							piece.directions.includes(drctn)
+								? pinnedPiece.setKPin(pid)
+								: pinnedPiece.setKPin(null);
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+	public markShadows = (): void => {
+		const control = Game.control;
+		for (const drctn of this.directions) {
+			let
+				sqid = this.sqid, // this is a King!
+				shadowedPiece: Piece = null,
+				checkShadow = false;
+			while(sqid = Board.nextSquare(drctn, sqid)) {
+				let pid: PID = null;
+				if ((pid = control.getPid(sqid)) && !(IS_KING.test(pid))) {
+					const
+						piece = control.getPiece(pid),
+						ds = piece.directions;
+					if (piece.getSide() !== this.getSide() && !ds.includes(drctn)) {
+						shadowedPiece = piece;
+						if (checkShadow) { break; }
+						checkShadow = true;
+					} else if (piece.getSide() !== this.getSide()) {
+						if (checkShadow) {
+							piece.directions.includes(drctn)
+								? shadowedPiece.setKShadow(pid)
+								: shadowedPiece.setKShadow(null);
 						}
 						break;
 					}
@@ -71,8 +102,8 @@ export class King extends Piece {
 					const
 						side = rook.getSide(),
 						sq = (side === 'W')
-												? (rpid[1] === 'K') ? 'g1' : 'c1'
-												: (rpid[1] === 'K') ? 'g8' : 'c8';
+							? (rpid[1] === 'K') ? 'g1' : 'c1'
+							: (rpid[1] === 'K') ? 'g8' : 'c8';
 					castlingSquares.push(sq);
 				}
 			});
@@ -81,7 +112,7 @@ export class King extends Piece {
 	}
 	protected findLegalPositions() {
 		const
-			gc = Game.control,
+			control = Game.control,
 			oppside = (this.getSide() === 'W') ? 'B' : 'W',
 			castleSquares = this.castling();
 
@@ -91,13 +122,18 @@ export class King extends Piece {
 
 		for (const sqid of this.potentials) {
 			const
-				adjacentPiece = gc.getPiece(sqid); // piece next to king of opposite side
+				adjacentPiece = control.getPiece(sqid), // NB: opposite side cos same side pieces not included in potentials
+				dfndrs = adjacentPiece ? adjacentPiece.getDfndrs() : [];
 
-			if (adjacentPiece && adjacentPiece.getDfndrs().length) {
-				continue;
-			} else
-
-			if (gc.checkedBy(sqid, oppside).length === 0) {
+			// let ds = dfndrs.filter((pid, idx) => {
+			// 	const piece = control.getPiece(pid);
+			// 	return !piece.isPinned(sqid);
+			// });
+			//
+			// if (adjacentPiece && ds.length) {
+			// 	continue;
+			// } else
+			if (control.checkedBy(sqid, oppside).length === 0) {
 				this.legals.push(sqid);
 			}
 		}

@@ -128,15 +128,16 @@ export class GameControl {
      assemblePieceData = () => {
           Object.keys(this.pieces).filter(pid => {
                if (!IS_KING.test(pid)) {
-                    const p: Piece = this.pieces[pid];
-                    p.updatePositionalData();
+                    const piece: Piece = this.pieces[pid];
+                    piece.updatePositionalData();
                }
           });
           // kings done deliberately after all other pieces
           ['BK', 'WK'].forEach(kpid => {
-               const piece: Piece = this.getPiece(kpid);
-               piece.updatePositionalData();
-               (piece as King).markPins();
+               const king: King = this.getPiece(kpid) as King;
+               king.markPins();
+               king.markShadows();
+               king.updatePositionalData();
           });
      }
      getCaptures = (): PID[] => {
@@ -253,14 +254,19 @@ export class GameControl {
      };
      checkedBy = (subject: SQID, checkingSide: SIDE): Piece[] => {
           const pieceBuffer: Piece[] = [];
-
+          if (subject === 'e5') {
+               console.log('WKBP at e5 ?');
+          }
           for (const drctn of ALL_DIRECTIONS) {
                let
                     sqid: SQID = subject,
                     firstStep = true;
 
                while (sqid = Board.nextSquare(drctn, sqid)) {
-                    const piece = this.getPiece(sqid);
+                    const
+                         pid = this.getPid(sqid),
+                         piece = this.getPiece(pid);
+
                     if (piece) {
                          if (checkingSide === piece.getSide()) {
                               const directionGroup = Board.getDirectionGroup(drctn);
@@ -380,8 +386,7 @@ export class GameControl {
                          const
                               pid = piece.getPid(),
                               forwardPawn = IS_PAWN.test(pid) && CARDINALS.includes(drctn), // pawn moving without capture
-                              // accessible = piece.getPotentials().includes(sqid); // potentials not sufficient as pawns can only capture diagonally step one
-                              accessible = piece.getAccessors().includes(sqid); // potentials not sufficient as pawns can only capture diagonally step one
+                              accessible = piece.getPotentials().includes(sqid); // potentials not sufficient as pawns can only capture diagonally step one
                          if (accessible && !piece.isPinned(sqid) && !forwardPawn) {
                               (pid[0] === 'W') ? whitePids.push(pid) : blackPids.push(pid);
                               continue; // skip this piece and continue this drctn to find discovered exchangers
@@ -389,8 +394,15 @@ export class GameControl {
                               continue; // skip this piece and continue this drctn to find discovered exchangers
                          } else if (IS_PAWN.test(pid)) {
                               const pdrctn: DIRECTION = Board.getDirection(sq, sqid);
-                              if (ORDINALS.includes(pdrctn) && piece.directions.includes(pdrctn) && sqid === Board.nextSquare(pdrctn, sq) && !piece.isPinned(sqid)) {
+                              // if (ORDINALS.includes(pdrctn) && piece.directions.includes(pdrctn) && sqid === Board.nextSquare(pdrctn, sq) && !piece.isPinned(sqid)) {
+                              //      // pawn can only exchange on diagonal one square forward
+                              //      (pid[0] === 'W') ? whitePids.push(pid) : blackPids.push(pid);
+                              // }
+                              if (ORDINALS.includes(pdrctn) && piece.directions.includes(pdrctn) && sqid === Board.nextSquare(pdrctn, sq)) {
                                    // pawn can only exchange on diagonal one square forward
+                                   if (piece.isPinned(sqid) && piece.getKPin() !== mpid) {
+                                        continue;
+                                   }
                                    (pid[0] === 'W') ? whitePids.push(pid) : blackPids.push(pid);
                               }
                          } else if (piece.directions.includes(drctn)) {

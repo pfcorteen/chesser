@@ -387,18 +387,23 @@ export class Game extends React.Component<IGame, IGamePosition> {
                moves = this.state.moves,
                lastMove = moves.length ? moves[moves.length - 1] : '';
 
-          // first update the piece data
-          if (this.props.test) {
-               if (lastMove.length && !lastMove.endsWith('=')) {
-                    gc.updateData();
-               }
-          } else if ((prevState.selectedSquare && !this.state.selectedSquare && !lastMove.endsWith('='))
-               || (lastMove.includes('=') && !lastMove.endsWith('='))) {
-               // we dont want to be updating the piece data unnecessarily in every rendering cycle
-               // the condition should limit the update to the situation just after a move has been made,
-               // and will ignore piece selection and check/checkmate renders and promotion first phase
+          if (this.state.squaresToPieces !== prevState.squaresToPieces) {
                gc.updateData();
           }
+          // console.log(`Move ${moves.length}: Piece placement change ${this.state.squaresToPieces !== prevState.squaresToPieces}`);
+          //
+          // // first update the piece data
+          // if (this.props.test) {
+          //      if (lastMove.length && !lastMove.endsWith('=')) {
+          //           gc.updateData();
+          //      }
+          // } else if ((prevState.selectedSquare && !this.state.selectedSquare && !lastMove.endsWith('='))
+          //      || (lastMove.includes('=') && !lastMove.endsWith('='))) {
+          //      // we dont want to be updating the piece data unnecessarily in every rendering cycle
+          //      // the condition should limit the update to the situation just after a move has been made,
+          //      // and will ignore piece selection and check/checkmate renders and promotion first phase
+          //      gc.updateData();
+          // }
 
           const
                kpid = (this.state.turn === 'W') ? 'WK' : 'BK',

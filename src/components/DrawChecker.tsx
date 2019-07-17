@@ -20,7 +20,9 @@ export class DrawChecker {
                     } else {
                          const
                               resArr = allMoves.match(DrawChecker.drawBffr + '(.+)$'),
-                              rmndr = resArr[1],
+
+                              rmndr = resArr ? resArr[1] : '', // exception: can't read property '1' of null
+
                               contArr = DrawChecker.drawBffr.match(rmndr);
                          if (contArr) {
                               return false;
