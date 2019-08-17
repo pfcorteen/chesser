@@ -64,15 +64,27 @@ export class Pawn extends Piece {
 
 	protected findLegalPositions() {
 		const
-			gc = Game.control,
-			enPassant = gc.getEnPassant();
+			control = Game.control,
+			enPassant = control.getEnPassant();
+			// pnnngPiece = control.getPiece(this.kpin),
+			// pnnngSqid = pnnngPiece ? pnnngPiece.getSqid() : null,
+			// kpid = (this.getSide() === 'W' ? 'B' : 'W') + 'K',
+			// ksqid = control.getPiece(kpid).getSqid();
 
-		for (const sqid of this.potentials) {
+	// this.potentials.forEach(sqid => {
+	for (const sqid of this.potentials) {
+
+			// if (pnnngSqid) {
+			// 	if (!Board.intercepts(sqid, pnnngSqid, ksqid)) {
+			// 		continue;
+			// 	}
+			// }
+
 			const
 				[file, rank] = sqid,
-				side: SIDE = this.pid[0] as SIDE,
+				side: SIDE = this.getSide(),
 				ahead = (file === this.sqid[0]),
-				cpid: PID = gc.getPid(sqid); // note: own cpids accounted for in Piece.getPotentialSquares
+				cpid: PID = control.getPid(sqid); // note: own cpids accounted for in Piece.getPotentialSquares
 
 			if (ahead) {
 				if (cpid) {
@@ -80,7 +92,7 @@ export class Pawn extends Piece {
 				} else {
 					if ((rank === '3' && side === 'W') || (rank === '6' && side === 'B')) {
 						const extrasqid: SQID = (file + ((side === 'W') ? '4' : '5')) as SQID;
-						if (!gc.getPid(extrasqid)) {
+						if (!control.getPid(extrasqid)) {
 							this.legals.push(extrasqid);
 							// this.potentials.push(extrasqid);
 						}

@@ -38,7 +38,7 @@ export class King extends Piece {
 				sqid = this.sqid, // this is a King!
 				pinnedPiece: Piece = null,
 				checkPin = false;
-			while(sqid = Board.nextSquare(drctn, sqid)) {
+			while (sqid = Board.nextSquare(drctn, sqid)) {
 				let pid: PID = null;
 				if ((pid = control.getPid(sqid)) && !(IS_KING.test(pid))) {
 					const piece = control.getPiece(pid);
@@ -69,9 +69,23 @@ export class King extends Piece {
 				let pid: PID = null;
 				if ((pid = control.getPid(sqid)) && !(IS_KING.test(pid))) {
 					const
-						piece = control.getPiece(pid),
-						ds = piece.directions;
-					if (piece.getSide() !== this.getSide() && !ds.includes(drctn)) {
+						piece = control.getPiece(pid);
+						// pdrctns = piece.directions;
+					// if (piece.getSide() !== this.getSide() && !pdrctns.includes(drctn)) {
+					// 	shadowedPiece = piece;
+					// 	if (checkShadow) { break; }
+					// 	checkShadow = true;
+					// } else if (piece.getSide() !== this.getSide()) {
+					// 	if (checkShadow) {
+					// 		piece.directions.includes(drctn)
+					// 			? shadowedPiece.setKShadow(pid)
+					// 			: shadowedPiece.setKShadow(null);
+					// 	}
+					// 	break;
+					// }
+					if (piece.getSide() === this.getSide()) {
+						break;
+					} else if (!piece.directions.includes(drctn)) {
 						shadowedPiece = piece;
 						if (checkShadow) { break; }
 						checkShadow = true;
@@ -113,7 +127,10 @@ export class King extends Piece {
 	protected findLegalPositions() {
 		const
 			control = Game.control,
-			oppside = (this.getSide() === 'W') ? 'B' : 'W',
+			// pnnngPiece = control.getPiece(this.kpin),
+			// pnnngSqid = pnnngPiece ? pnnngPiece.getSqid() : null,
+			oppSide = this.getSide() === 'W' ? 'B' : 'W',
+			// ksqid = control.getPiece(oppSide + 'K'). getSqid(),
 			castleSquares = this.castling();
 
 		if (castleSquares.length) {
@@ -121,19 +138,18 @@ export class King extends Piece {
 		}
 
 		for (const sqid of this.potentials) {
+
+			// if (pnnngSqid) {
+			// 	if (!Board.intercepts(sqid, pnnngSqid, ksqid)) {
+			// 		continue;
+			// 	}
+			// }
+
 			const
 				adjacentPiece = control.getPiece(sqid), // NB: opposite side cos same side pieces not included in potentials
 				dfndrs = adjacentPiece ? adjacentPiece.getDfndrs() : [];
 
-			// let ds = dfndrs.filter((pid, idx) => {
-			// 	const piece = control.getPiece(pid);
-			// 	return !piece.isPinned(sqid);
-			// });
-			//
-			// if (adjacentPiece && ds.length) {
-			// 	continue;
-			// } else
-			if (control.checkedBy(sqid, oppside).length === 0) {
+			if (control.checkedBy(sqid, oppSide).length === 0) {
 				this.legals.push(sqid);
 			}
 		}

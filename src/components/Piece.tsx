@@ -1,7 +1,7 @@
 import { Board } from "./Board";
 import { Game } from "./Game";
 import { GameControl } from "./GameControl";
-import { SIDE, SQID, PID, DIRECTION, ALL_DIRECTIONS, HALF_WINDS, IPieceData } from "./Model";
+import { SIDE, SQID, PID, FILES, DIRECTION, ALL_DIRECTIONS, HALF_WINDS, CARDINALS, IPieceData, IS_PAWN } from "./Model";
 
 export abstract class Piece {
      protected sqid: SQID | null;
@@ -20,12 +20,32 @@ export abstract class Piece {
 
      public directions: DIRECTION[] = [];
 
-     protected abstract findLegalPositions(): void;
+     protected abstract findLegalPositions(): void; // NNB: effect of pins on legal squares is dealt with in King.markPins()
+
+     // protected findLegalPositions() {
+     //      const
+     //           control = Game.control,
+     //           pnnngPiece = control.getPiece(this.kpin),
+     //           pnnngSqid = pnnngPiece ? pnnngPiece.sqid : null,
+     //           oppSide = this.getSide() === 'W' ? 'B' : 'W',
+     //           ksqid = control.getPiece(oppSide + 'K'). getSqid();
+     //
+     //      for (const sqid of this.potentials) {
+     //           if (pnnngSqid) {
+     //                if (!Board.intercepts(sqid, pnnngSqid, ksqid)) {
+     //                     continue;
+     //                }
+     //           }
+     //           this.legals.push(sqid);
+     //      }
+     // }
 
      constructor(sqid: SQID, pid: PID) {
           this.sqid = sqid;
           this.pid = pid;
      }
+
+
      public getPid = (): PID => { return this.pid; }
      public setSqid = (sqid: SQID): void => { this.sqid = sqid; }
      public getSqid = (): SQID => { return this.sqid; }
@@ -52,12 +72,29 @@ export abstract class Piece {
      }
      public setKPin = (pid: PID): void => {
           this.kpin = pid;
+          // now also adjust legals
+          if (pid) {
+               const
+                    control = Game.control,
+                    oppKing = control.getPiece((this.pid[0] + 'K')),
+                    pnnngPiece = control.getPiece(pid),
+                    pnnngSqid = pnnngPiece.getSqid(),
+                    oppKsqid = oppKing.getSqid();
+               let
+                    tmplgls: SQID[] = [];
+               for (const sqid of this.legals) {
+                    if (Board.intercepts(sqid, pnnngSqid, oppKsqid)) {
+                         tmplgls.push(sqid);
+                    }
+               }
+               this.legals = tmplgls;
+          }
      }
      public getKPin = (): PID => {
           return this.kpin;
      }
-     public isShadowed = (destination: SQID): boolean => {
-          // NB: directions of shader piece established when set
+     public isShadowing = (destination: SQID): boolean => {
+          // NB: directions of shadowing piece established when set
           let retval = false;
           if (this.kshadow !== null) {
                const
@@ -88,13 +125,25 @@ export abstract class Piece {
      public getAttckng = (): PID[] => { return this.attckng; }
      public getAttckrs = (): PID[] => { return this.attckrs; }
      public getDfndng = (): PID[] => { return this.dfndng; }
-     public getDfndrs = (): PID[] => { return this.dfndrs; }
+     public getDfndrs = (): PID[] => { return this.dfndrs.filter(a => { return a ? true : false; }); }
 
+     // moveTowards is now in Board as a static
+     // public moveTowards = (to: SQID): SQID[] => {
+     //      let route: SQID[] = [];
+	// 	this.legals.forEach(lgl => {
+	// 		const drctn = Board.getDirection(lgl, to);
+	// 		if (drctn && this.directions.includes(drctn)) {
+     //                if (to === Board.nextSquare(drctn, lgl)) {
+     //                     route.push(lgl);
+     //                }
+	// 		}
+	// 	})
+	// 	return route;
+     // }
      public alignedWith = (sqid: SQID): boolean => {
           const drctn = Board.getDirection(this.sqid, sqid);
           return this.directions.includes(drctn);
      }
-
      public getLegalPositions = (): SQID[] => {
           this.legals = [];
           this.potentials = [];
@@ -140,7 +189,8 @@ export abstract class Piece {
           const
                gc = Game.control,
                squares = gc.getSquares(),
-               side = this.getSide();
+               side = this.getSide(),
+               ep = gc.getEnPassant();
 
           this.kpin = null;
           this.kshadow = null;
@@ -186,6 +236,29 @@ export abstract class Piece {
                     }
                }
           }
+
+          if (ep && IS_PAWN.test(this.pid)) {
+               const
+                    eppid = gc.getPid(ep),
+                    epside = (ep[1] === '4') ? 'W' : 'B',
+                    epFileIdx = FILES.indexOf(ep[0]),
+                    leftSqid = (FILES[epFileIdx - 1] + ep[1]) as SQID,
+                    rightSqid = (FILES[epFileIdx + 1] + ep[1]) as SQID;
+               let  lpid = gc.getPid(leftSqid),
+                    rpid = gc.getPid(rightSqid);
+
+               lpid = (lpid && IS_PAWN.test(lpid)) ? (lpid[0] !== epside ? lpid : null) : null,
+               rpid = (rpid && IS_PAWN.test(rpid)) ? (rpid[0] !== epside ? rpid : null) : null;
+
+               if (this.sqid === ep && lpid) {
+                    this.attckrs.push(lpid);
+               } else if (this.sqid === ep && rpid) {
+                    this.attckrs.push(rpid);
+               } else if (this.sqid === leftSqid || this.sqid === rightSqid) {
+                    this.attckng.push(eppid);
+               }
+          }
+
           this.legals = this.getLegalPositions();
      }
      public confirmPieceData = (pieceData: IPieceData): boolean => {

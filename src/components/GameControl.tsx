@@ -254,9 +254,9 @@ export class GameControl {
      };
      checkedBy = (subject: SQID, checkingSide: SIDE): Piece[] => {
           const pieceBuffer: Piece[] = [];
-          if (subject === 'e5') {
-               console.log('WKBP at e5 ?');
-          }
+          // if (subject === 'e5') {
+          //      console.log('WKBP at e5 ?');
+          // }
           for (const drctn of ALL_DIRECTIONS) {
                let
                     sqid: SQID = subject,
@@ -340,7 +340,7 @@ export class GameControl {
                     attckngPieceAttckrs.splice(kidx, 1);
                }
 
-               if (this.interceptAlignment(king, attckngPiece).length) {
+               if (this.interceptAlignment(king, attckngPiece.getSqid()).length) {
                     isMate = false;
                } else if (attckngPieceAttckrs.length) {
                     isMate = false;
@@ -420,12 +420,13 @@ export class GameControl {
           });
           return [whitePids, blackPids];
      }
-     interceptAlignment = (attacked: Piece, attacking: Piece): PID_TO[] => {
+     // interceptAlignment = (attacked: Piece, attacking: Piece): PID_TO[] => {
+     interceptAlignment = (attacked: Piece, attckngSqid: SQID): PID_TO[] => {
           const
                attackedPid = attacked.getPid(),
                attackedSide = attackedPid[0] as SIDE,
                attckdsideKingPid = attackedSide + 'K',
-               betweens: SQID[] = Board.betweenSquares(attacked.getSqid(), attacking.getSqid());
+               betweens: SQID[] = Board.betweenSquares(attacked.getSqid(), attckngSqid);
 
           if (betweens.length === 0) {
                return [];
