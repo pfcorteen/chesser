@@ -31,7 +31,6 @@ export class ComputedMove {
           };
      }
 
-
      // keep track of which parts of a move have been enacted
      private enactedMove: IGameMove = { pid: null, to: null, ppid: null, result: null };
 
@@ -41,8 +40,48 @@ export class ComputedMove {
 
      private moveScorer = ComputedMove.scoredMoveRegister();
 
+     private performComputedMove = (): void => {
+          const
+               control = Game.control,
+               currentPlayer = control.getCurrentPlayer();
+          let
+               elmnt: HTMLElement = null;
+
+          if (this.computedMove.pid === null) {
+               const
+                    oppkpid = (((currentPlayer === 'W') ? 'B' : 'W') + 'K') as PID,
+                    oppKing = control.getPiece(oppkpid),
+                    sqid = oppKing.getSqid();
+               elmnt = document.getElementById(sqid);
+          } else {
+               const
+                    pid = this.computedMove.pid,
+                    piece = control.getPiece(pid),
+                    from = piece.getSqid(),
+                    to = this.computedMove.to,
+                    ppid = this.computedMove.ppid,
+                    side = control.getCurrentPlayer();
+
+               if (this.enactedMove.pid === null) {
+                    this.enactedMove.pid = pid;
+                    elmnt = document.getElementById(from);
+               } else if (this.enactedMove.to === null) {
+                    if (ppid) {
+                         this.enactedMove.to = to;
+                    } else {
+                         this.enactedMove = { pid: null, to: null, ppid: null, result: null };
+                         this.computedMove = this.enactedMove;
+                    }
+                    elmnt = document.getElementById(to);
+               } else {
+                    this.enactedMove = { pid: null, to: null, ppid: null, result: null };
+                    this.computedMove = this.enactedMove;
+                    elmnt = document.getElementById(side + 'Q');
+               }
+          }
+          elmnt && elmnt.click();
+     }
      compute = (lastMove: string): void => {
-          const pids: PID[] = Game.control.getPidArray('W');
 
           if (!this.enactedMove.pid) {
                if (lastMove) {
@@ -63,7 +102,7 @@ export class ComputedMove {
                this.deliverMate,
                this.considerCaptures,
                this.kingHunt,
-               this.computeBestMove
+               this.computeBestMove,
                // this.computeRandomMove
           ];
 
@@ -71,9 +110,9 @@ export class ComputedMove {
                let generatedMove: IGeneratedMove = null;
                this.moveScorer(this.dudMove); // set up fresh scoredMoves list
 
-               for (let idx = 0; idx < strategies.length; idx += 1) {
-                    const func = strategies[idx];
-                    if (generatedMove = func()) {
+               for (const func of strategies) {
+                    generatedMove = func(lastMove);
+                    if (generatedMove) {
                          this.computedMove = generatedMove;
                          break;
                     }
@@ -92,7 +131,11 @@ export class ComputedMove {
           const sortedPids = this.sortPidsByLowestRank(pids);
           let sortedPidsAndRanks: [PID, number][] = [];
           sortedPids.map(pid => {
-               sortedPidsAndRanks.push([pid, BasicPieceRank[pid[pid.length - 1]]]);
+               const
+                    control = Game.control;
+               // sortedPidsAndRanks.push([pid, BasicPieceRank[pid[pid.length - 1]]]);
+               sortedPidsAndRanks.push([pid, control.getPieceWorth(pid)]);
+
           });
           return sortedPidsAndRanks;
      }
@@ -100,87 +143,86 @@ export class ComputedMove {
           // Kings always last in exchange
           return pids.sort((apid, bpid) => { // rank by lowest piece value first
                const
-                    abpr = IS_KING.test(apid) ? 10 : BasicPieceRank[apid[apid.length - 1]],
-                    bbpr = IS_KING.test(bpid) ? 10 : BasicPieceRank[bpid[bpid.length - 1]];
+                    control = Game.control,
+                    // abpr = IS_KING.test(apid) ? 10 : BasicPieceRank[apid[apid.length - 1]],
+                    // bbpr = IS_KING.test(bpid) ? 10 : BasicPieceRank[bpid[bpid.length - 1]],
+                    abpr = IS_KING.test(apid) ? 10 : control.getPieceWorth(apid),
+                    bbpr = IS_KING.test(bpid) ? 10 : control.getPieceWorth(bpid);
+
+
                return abpr - bbpr;
           });
      }
      private rankByLowestScore = (a, b): number => {
           // rank by lowest piece value within highest score first
           const
+               control = Game.control,
                apid = a.pid,
                bpid = b.pid,
-               abps = a.score + BasicPieceRank[apid[apid.length - 1]],
-               bbps = b.score + BasicPieceRank[bpid[bpid.length - 1]];
+               abps = a.score + control.getPieceWorth(apid),
+               bbps = b.score + control.getPieceWorth(bpid);
           if (a.score === b.score) {
                return abps - bbps;
           }
           return b.score - a.score
      }
-     private promo = (pid: PID, sqid: SQID): PID => {
+     private rankByHighestScore = (a, b): number => {
+          // rank by lowest piece value within highest score first
+          const
+          control = Game.control,
+               apid = a.pid,
+               bpid = b.pid,
+               abps = a.score + control.getPieceWorth(apid),
+               bbps = b.score + control.getPieceWorth(bpid);
+          if (a.score === b.score) {
+               return bbps - abps;
+          }
+          return b.score - a.score
+     }
+     private promo = (pid: PID, to: SQID): PID => {
           let retpid: PID = null;
           if (IS_PAWN.test(pid)) {
                const
                     side: SIDE = pid[0] as SIDE,
-                    rank = sqid[1];
+                    rank = to[1];
                if (rank === '8' || rank === '1') {
                     const promPidArray: PID[] = [side + 'Q', side + 'R', side + 'B', side + 'N'];
-                    // retpid = promPidArray[~~(Math.random() * promPidArray.length)];
-                    retpid = side + 'Q'; // always return the queen for now
+                    let scoredMoves: IScoredMove[] = [];
+                    for (const promPid of promPidArray) {
+                         const score = this.squareValueReOccupy([promPid, to]);
+                         scoredMoves.push({ pid: pid, to: to, ppid: promPid, score: score });
+                    }
+                    scoredMoves = scoredMoves.sort(this.rankByHighestScore)
+                    // retpid = side + 'Q'; // always return the queen for now
+                    retpid = scoredMoves[0].ppid;
                }
           }
           return retpid;
      }
-     private performComputedMove = (): void => {
-          const
-               control = Game.control,
-               cpid = this.computedMove.pid,
-               cpiece = control.getPiece(cpid),
-               cfrom = cpiece.getSqid(),
-               cto = this.computedMove.to,
-               cppid = this.computedMove.ppid;
-
-          let elmnt: HTMLElement = null;
-
-          if (this.enactedMove.pid === null) {
-               this.enactedMove.pid = cpid;
-               elmnt = document.getElementById(cfrom);
-          } else if (this.enactedMove.to === null) {
-               if (cppid) {
-                    this.enactedMove.to = cto;
-               } else {
-                    this.enactedMove = { pid: null, to: null, ppid: null, result: null };
-                    this.computedMove = this.enactedMove;
-               }
-               elmnt = document.getElementById(cto);
-          } else {
-               this.enactedMove = { pid: null, to: null, ppid: null, result: null };
-               this.computedMove = this.enactedMove;
-               elmnt = document.getElementById(cppid);
-          }
-          elmnt.click();
-     }
      private computeBestMove = (): IGeneratedMove => {
-          console.log(' entered computeBestMove');
+          // console.log(' entered computeBestMove');
           const
                control = Game.control,
-               pids: PID[] = control.getPidArray(Game.nextTurn),
+               currentPlayer = control.getCurrentPlayer(),
+               pids: PID[] = control.getPidArray(currentPlayer),
                scoredMoves: IScoredMove[] = [];
 
-          pids.forEach(pid => {
+          for (const pid of pids) {
                const
                     piece = control.getPiece(pid),
                     legals = piece.getLegals();
 
-               legals.forEach(sqid => {
-                    if (!piece.isPinned(sqid)) {
-                         const score = this.squareValueReOccupy([pid, sqid]);
-                         scoredMoves.push(
-                              { pid: pid, to: sqid, ppid: this.promo(pid, sqid), score: score }
-                         );
+               if (!IS_KING.test(pid)) { // TODO how to counter king score 1000?
+                    for (const sqid of legals) {
+                         if (!piece.isPinned(sqid)) {
+                              const score = this.squareValueReOccupy([pid, sqid]);
+                              scoredMoves.push(
+                                   { pid: pid, to: sqid, ppid: this.promo(pid, sqid), score: score }
+                              );
+                         }
                     }
-               });
-          });
+               }
+          }
 
           let generatedMove: IGeneratedMove = null;
           if (scoredMoves.length) {
@@ -203,7 +245,7 @@ export class ComputedMove {
           return generatedMove;
      }
      private escapeCheck = (lastMove: string): void => {
-          console.log(' entered escapeCheck');
+          // console.log(' entered escapeCheck');
           const
                control = Game.control,
                checkingSide: SIDE = lastMove[0] as SIDE,
@@ -217,7 +259,6 @@ export class ComputedMove {
 
           if (chckrs.length === 1) {
                const
-                    // control = Game.control,
                     chckrPid = chckrs[0],
                     chckrPiece = control.getPiece(chckrPid),
                     attckrs = chckrPiece.getAttckrs(),
@@ -249,7 +290,8 @@ export class ComputedMove {
           kLegals.forEach((sqid) => {
                const
                     pid = control.getPid(sqid),
-                    score = (pid) ? BasicPieceRank[pid[pid.length - 1]] : 0;
+                    // score = (pid) ? BasicPieceRank[pid[pid.length - 1]] : 0;
+                    score = (pid) ? control.getPieceWorth(pid) : 0;
                scoredMoves.push({ pid: kingPid, to: sqid, ppid: null, score: score });
           });
 
@@ -258,23 +300,25 @@ export class ComputedMove {
           this.computedMove = { pid: mv.pid, to: mv.to, ppid: mv.ppid };
      }
 
-     private deliverMate = (): IGeneratedMove => {
-     // return a move that will give check mate (or a move that will definitely lead to check mate ?)
+     private deliverMate = (lastMove: string): IGeneratedMove => {
+     // return a move that will give check mate (or TODO a move that will definitely lead to check mate ?)
+     // NB this strategy does not bother to score all possible moves it considers due to overcomplication of code
           // console.log('deliverMate')
           const
                control = Game.control,
-               nextturn: SIDE = Game.nextTurn,
-               lastturn: SIDE = nextturn === 'W' ? 'B' : 'W',
-               kpid: PID = lastturn + 'K',
+               // currentPlayer: SIDE = (lastMove ? ((lastMove[0] === 'W') ? 'B' : 'W') : control.getCurrentPlayer()) as SIDE,
+               currentPlayer: SIDE = control.getCurrentPlayer(),
+               lastPlayer: SIDE = currentPlayer === 'W' ? 'B' : 'W',
+               kpid: PID = lastPlayer + 'K',
                kpiece: Piece = control.getPiece(kpid),
                klegals: SQID[] = kpiece.getLegals(),
                ksqid: SQID = kpiece.getSqid(),
                kattckng: PID[] = kpiece.getAttckng(),
-               myPidArray: PID[] = control.getPidArray(nextturn),
-               oppPidArray: PID[] = control.getPidArray(lastturn),
+               myPidArray: PID[] = control.getPidArray(currentPlayer),
+               oppPidArray: PID[] = control.getPidArray(lastPlayer),
                enPassant: SQID = control.getEnPassant(),
                discoveredCheckMate = (movingPiece: Piece): IGeneratedMove => {
-                    console.log('discoveredCheckMate')
+                    // console.log('discoveredCheckMate')
                     const
                          mvngPid = movingPiece.getPid(),
                          mvngLegals = movingPiece.getLegals(),
@@ -307,7 +351,7 @@ export class ComputedMove {
                     // can the remaining squares be attacked by the moving piece?
                     let checkingMoves: SQID[] = [], rmmngKLegals: SQID[] = [];
 
-                    for(const sqid of kingsLegals) {
+                    for (const sqid of kingsLegals) {
                          const squares = Board.moveTowards(sqid, mvngLegals, movingPiece.directions);
                          if (!squares.length) {
                               rmmngKLegals.push(sqid);
@@ -316,20 +360,15 @@ export class ComputedMove {
                          }
                     }
 
-                    for (const rl of rmmngKLegals) {
-                         const  ppid = this.promo(mvngPid, rl),
-                              score = this.squareValueReOccupy([mvngPid, rl]);
-                         scoredMoves.push({ pid: mvngPid, to: rl, ppid: ppid, score: score });
-                    }
-
-                    if (!rmmngKLegals.length) { // all legals addressed so any move by discovering piece we found will do...
+                    if (!rmmngKLegals.length && checkingMoves.length) {
+                         // all legals addressed so any move by discovering piece we found will do...
                          return { pid: mvngPid, to: checkingMoves[0], ppid: null };
                     }
 
                     return null;
                },
                pinCheckMate = (pinnedPiece: Piece): IGeneratedMove => {
-                    console.log('pinCheckMate');
+                    // console.log('pinCheckMate');
                     for (const pnndPieceAttckrPid of pinnedPiece.getAttckrs()) {
                          const
                               pinningPid = pinnedPiece.getKPin(),
@@ -364,10 +403,8 @@ export class ComputedMove {
                               pinDrctn = Board.getDirection(mvTo, ksqid);
                          }
 
-                         // record the general score of the proposed move
+                         // get and use score as indicator that moving piece may be captured
                          const score = this.squareValueReOccupy([chckngPid, chckngSqid]);
-                         // scoredMoves.push({ pid: mvPid, to: mvTo, ppid: mvppid, score: score }); // unnecessary
-
                          if (score >= 0 && chckngPiece.directions.includes(pinDrctn)) {
                               squaresInDirection = Board.fromDirectionSquares(chckngSqid, pinDrctn),
                               intrcptPidtos = control.interceptAlignment(kpiece, mvTo);
@@ -397,17 +434,11 @@ export class ComputedMove {
                                    if (!isShadowedPiece) {
                                         if (plegals.includes(sqid) && piece.directions.includes(drctn)) {
                                              if (!(IS_PAWN.test(pid) && (!ORDINALS.includes(drctn) || ksqid !== Board.nextSquare(drctn, sqid)))) {
-                                                  // const strfyPidTo = JSON.stringify([pid, sqid]);
-                                                  // pidtos.push(strfyPidTo);
                                                   pidtos.push([pid, sqid]);
                                              }
                                         }
                                    } else {
                                         plegals.forEach(sqid => {
-                                             // const pidto = JSON.stringify([pid, sq]);
-                                             // if (!pidtos.includes(pidto)) {
-                                             //      pidtos.push(pidto);
-                                             // }
                                              pidtos.push([pid, sqid]);
                                         });
                                    }
@@ -421,7 +452,6 @@ export class ComputedMove {
           let
                generatedMove: IGeneratedMove = null,
                pidtos: PID_TO[] = [];
-               // scoredMoves: IScoredMove[] = [];
 
           for (const pid of myPidArray) {
                const piece = control.getPiece(pid);
@@ -442,8 +472,6 @@ export class ComputedMove {
           }
 
           pidtos = assemblePidTos(kpiece.getAccessors());
-
-
           for (const pidto of pidtos) {
                const score = this.squareValueReOccupy(pidto); // can our moved piece be captured?
 
@@ -521,14 +549,10 @@ export class ComputedMove {
                }
           }
 
-          if (generatedMove) {
-               return generatedMove;
-          }
-
-          return generatedMove;
+          return generatedMove; // maybe null
      }
      private considerCaptures = (): IGeneratedMove => {
-          console.log(' entered considerCaptures');
+          // console.log(' entered considerCaptures');
           const
                escapeCapture: IScoredMove = this.escapeCapture(),
                tryCapture: IScoredMove = this.tryCapture(),
@@ -539,12 +563,12 @@ export class ComputedMove {
           return (move && move.score >= 0) ? { pid: move.pid, to: move.to, ppid: move.ppid } : null;
      }
      private tryCapture = (): IScoredMove => {
-          console.log(' entered tryCapture');
+          // console.log(' entered tryCapture');
           const
                control = Game.control,
                ep = control.getEnPassant(),
-               nextturn: SIDE = Game.nextTurn,
-               lastturn: SIDE = nextturn === 'W' ? 'B' : 'W',
+               currentPlayer: SIDE = control.getCurrentPlayer(),
+               lastturn: SIDE = (currentPlayer === 'W') ? 'B' : 'W',
                oppsidePids: PID[] = control.getPidArray(lastturn);
 
           // find all pieces I am attacking and check their defences
@@ -572,14 +596,13 @@ export class ComputedMove {
                });
           });
 
-          pidtos.forEach((pidto) => {
+          for (const [pid, to] of pidtos) {
                const
-                    [pid, to] = pidto,
                     ppid = this.promo(pid, to),
                     score = this.squareValueReOccupy([pid, to]);
 
                scoredMoves.push({ pid: pid, to: to, ppid: ppid, score: score });
-          });
+          }
 
           let scoredMove: IScoredMove = null;
           if (scoredMoves.length) {
@@ -590,11 +613,11 @@ export class ComputedMove {
      }
 
      private escapeCapture = (): IScoredMove => {
-          console.log(' entered escapeCapture');
+          // console.log(' entered escapeCapture');
           const
                control = Game.control,
-               nextturn: SIDE = Game.nextTurn,
-               movingSidePids: PID[] = control.getPidArray(nextturn);
+               currentPlayer: SIDE = control.getCurrentPlayer(),
+               movingSidePids: PID[] = control.getPidArray(currentPlayer);
 
           // find all my pieces that are attacked and try to ensure their defences
           let scoredMoves: IScoredMove[] = [];
@@ -632,15 +655,16 @@ export class ComputedMove {
      private kingHunt = (): IGeneratedMove => {
           // if the opponent king cannot move legally, find a way to attack it,
           // otherwise can the kings legal positions be reduced.
-          console.log(' entered kingHunt');
+          // console.log(' entered kingHunt');
           const
                control = Game.control,
-               oppside: SIDE = Game.nextTurn === 'W' ? 'B' : 'W',
+               currentPlayer = control.getCurrentPlayer(),
+               oppside: SIDE = currentPlayer === 'W' ? 'B' : 'W',
                oppKpid: PID = oppside + 'K',
                oppKpiece: Piece = control.getPiece(oppKpid),
                oppKsqid: SQID = oppKpiece.getSqid(),
                oppKAccessors: SQID[] = oppKpiece.getAccessors(),
-               pids: PID[] = control.getPidArray(Game.nextTurn);
+               pids: PID[] = control.getPidArray(currentPlayer);
 
           let pidToFroms: PID_FROM_TO[] = [];
           pids.forEach(pid => {
@@ -662,10 +686,6 @@ export class ComputedMove {
                                              const pidtofrom: PID_FROM_TO = [pid, from, to];
                                              pidToFroms.push(pidtofrom);
                                         }
-                                        // if (!alignedPiece || (alignedPiece.getSide() === oppside && alignedPiece.getSqid() === to)) {
-                                        //      const pidtofrom: PID_FROM_TO = [pid, from, to];
-                                        //      pidToFroms.push(pidtofrom);
-                                        // }
                                    }
                               }
                          }
@@ -693,7 +713,7 @@ export class ComputedMove {
           return computedMove;
      }
      private defendPieceOnSqid = ([apid, to]: PID_TO): IScoredMove => {
-          console.log(' entered defendPieceOnSqid');
+          // console.log(' entered defendPieceOnSqid');
           const
                control = Game.control,
                attackedPid = control.getPid(to),
@@ -775,38 +795,38 @@ export class ComputedMove {
 
           return scoredMoves.length ? scoredMoves[0] : null;
      }
-     squareValueReOccupy = ([mpid, to]: PID_TO): number => {
+     squareValueReOccupy = ([mpid, mto]: PID_TO): number => {
           const
                control = Game.control,
-               movingPiece = control.getPiece(mpid);
+               mpiece = control.getPiece(mpid);
 
-          if (movingPiece.isPinned(to)) {
+          if (mpiece && mpiece.isPinned(mto)) {
                return -1000; // move not allowed
           }
 
-          let retScoreVal: number;
-          if ((retScoreVal = this.moveScorer({pid: mpid, to: to, ppid: null })) !== undefined) {
-               return retScoreVal;
+          let retScore: number;
+          if ((retScore = this.moveScorer({pid: mpid, to: mto, ppid: null })) !== undefined) {
+               return retScore;
           }
           const
                myside: SIDE = mpid[0] as SIDE,
-               mpRank = BasicPieceRank[mpid[mpid.length - 1]],
-               cpid = control.getPid(to), // pid of a captured piece
-               cpRank = cpid ? BasicPieceRank[cpid[cpid.length - 1]] : 0;
+               mpRank: number = control.getPieceWorth(mpid),
+               cpid = control.getPid(mto), // pid of a captured piece
+               cpRank: number = cpid ? control.getPieceWorth(cpid) : 0;
 
           let
-               [whites, blacks] = control.squareExchangers([mpid, to]),
+               [whites, blacks] = control.squareExchangers([mpid, mto]),
                [mattckrs, odfndrs] = (myside === 'W') ? [whites, blacks] : [blacks, whites]; // my attackers, opposing defenders
 
           mattckrs = mattckrs.filter(pid => { return pid !== mpid; });
 
           if (IS_KING.test(mpid) && odfndrs.length) {
-               if (odfndrs.length === 1 && control.getPiece(odfndrs[0]).isPinned(to)) {
+               if (odfndrs.length === 1 && control.getPiece(odfndrs[0]).isPinned(mto)) {
                     odfndrs.length = 0;
                } else {
-                    retScoreVal = -mpRank;
-                    this.moveScorer({pid: mpid, to: to, ppid: null }, retScoreVal);
-                    return retScoreVal;
+                    retScore = -mpRank;
+                    this.moveScorer({pid: mpid, to: mto, ppid: null }, retScore);
+                    return retScore;
                }
           };
 
@@ -817,10 +837,10 @@ export class ComputedMove {
           mattckrsWithRank.unshift([mpid, mpRank]); // put moving piece to front of moves
 
           let
-               mattckrScore = 0,
-               odfndrScore = 0,
+               mattckrScore: number = 0,
+               odfndrScore: number = 0,
                myMove = true,
-               tempRank = cpRank,
+               tempRank: number = cpRank,
                shifted: [PID, number];
 
           while (shifted = myMove ? mattckrsWithRank.shift() : odfndrsWithRank.shift()) {
@@ -838,15 +858,15 @@ export class ComputedMove {
                myMove = !myMove;
 
                if (!myMove && (odfndrScore > mattckrScore)) {
-                    retScoreVal = mattckrScore - odfndrScore;
-                    this.moveScorer({pid: mpid, to: to, ppid: null }, retScoreVal);
-                    return retScoreVal;
+                    retScore = mattckrScore - odfndrScore;
+                    this.moveScorer({pid: mpid, to: mto, ppid: null }, retScore);
+                    return retScore;
                }
           }
 
-          retScoreVal = (mattckrScore >= odfndrScore) ? mattckrScore - odfndrScore : -(odfndrScore - mattckrScore);
-          this.moveScorer({pid: mpid, to: to, ppid: null }, retScoreVal);
-          return retScoreVal;
+          retScore = (mattckrScore >= odfndrScore) ? mattckrScore - odfndrScore : -(odfndrScore - mattckrScore);
+          this.moveScorer({pid: mpid, to: mto, ppid: null }, retScore);
+          return retScore;
      }
      revealedSquares([pid, to]): SQID[] {
           let revealedSqids: SQID[] = [];
@@ -880,13 +900,13 @@ export class ComputedMove {
           // console.log(' entered deliverCheck');
           const
                control = Game.control,
-               nextturn: SIDE = Game.nextTurn,
-               lastturn: SIDE = nextturn === 'W' ? 'B' : 'W',
-               kpid: PID = lastturn + 'K',
+               currentPlayer: SIDE = control.getCurrentPlayer(),
+               oppPlayer: SIDE = currentPlayer === 'W' ? 'B' : 'W',
+               kpid: PID = oppPlayer + 'K',
                kpiece: Piece = control.getPiece(kpid),
                ksqid: SQID = kpiece.getSqid(),
                kaccesSqrs: SQID[] = kpiece.getAccessors(),
-               pidArray: PID[] = control.getPidArray(nextturn);
+               pidArray: PID[] = control.getPidArray(currentPlayer);
 
           let
                // pidtos: PID_TO[] = [],
@@ -948,7 +968,7 @@ export class ComputedMove {
      // private computeRandomMove = (): void => {
      //      // console.log(' entered computeRandomMove');
      //      const
-     //           control = Game.control,
+     //           control = this.control,
      //           pids: PID[] = control.getPidArray(Game.nextTurn)
      //
      //      let

@@ -55,10 +55,10 @@ export class Board extends React.Component<IBoard, {}> {
           return null;
      }
 
-     static getDirection(fromsqid: SQID, tosqid: SQID): DIRECTION {
+     static getDirection(from: SQID, to: SQID): DIRECTION {
           const
-               [fromfile, fromrank] = fromsqid,
-               [tofile, torank] = tosqid,
+               [fromfile, fromrank] = from,
+               [tofile, torank] = to,
                ifr = RANKS.indexOf(fromrank),
                itr = RANKS.indexOf(torank),
                iff = FILES.indexOf(fromfile),
@@ -178,23 +178,35 @@ export class Board extends React.Component<IBoard, {}> {
 
      render() {
           const
+               control = Game.control,
                jsxElms: JSX.Element[] = [],
-               squaresToPieces = this.props.squaresToPieces,
+               sqidsToPids = this.props.sqidsToPids,
                selectedSquare: SQID = this.props.selectedSquare,
                orientation = this.props.orientation,
                moves = this.props.moves,
                nMoves = this.props.moves.length,
                lastMove = nMoves ? moves[nMoves - 1] : '',
-               stalemate = lastMove.endsWith('='),
-               checking = this.props.checking,
-               chkingpiece = (checking.length === 0) ? null : squaresToPieces[checking[0]],
+               stalemate = lastMove.startsWith('1/2-1/2'),
+               blackKing = control.getPiece('BK'),
+               whiteKing = control.getPiece('WK'),
+               blackKingAttackers = blackKing.getAttckrs(),
+               whiteKingAttackers = whiteKing.getAttckrs(),
+               // checking = this.props.checking,
+               // chkingpid = (checking.length === 0) ? null : sqidsToPids[checking[0]],
                attacking = this.props.attacking,
                attacked = this.props.attacked,
                defending = this.props.defending,
-               defended = this.props.defended,
-               kpid = ((chkingpiece)
-                    ? (chkingpiece[0] === 'W') ? 'BK' : 'WK'
-                    : null) as PID;
+               defended = this.props.defended;
+               // kpid = ((chkingpid)
+               //      ? (chkingpid[0] === 'W') ? 'BK' : 'WK'
+               //      : null) as PID;
+
+          if (blackKingAttackers.length && whiteKingAttackers.length) {
+               throw Error ('Both kings attacked - impossible');
+          }
+
+          // now set kpid only if a king is in check - otherwise null
+          let kpid = (blackKingAttackers.length) ? 'BK' : ((whiteKingAttackers.length) ? 'WK' : null);
 
           for (let rank = (orientation === 'W') ? RANKS.length - 1 : 0;
                (orientation === 'W') ? rank >= 0 : rank < RANKS.length;
@@ -205,7 +217,7 @@ export class Board extends React.Component<IBoard, {}> {
 
                     const
                          sqid: SQID = (FILES[file] + RANKS[rank]) as SQID,
-                         pid: PID = this.props.squaresToPieces[sqid],
+                         pid: PID = this.props.sqidsToPids[sqid],
                          selected = (selectedSquare && selectedSquare === sqid),
                          legal = this.props.legals.includes(sqid),
                          attckng = attacking.includes(sqid),
@@ -219,7 +231,8 @@ export class Board extends React.Component<IBoard, {}> {
                               sqid={sqid}
                               pid={pid}
                               stalemate={stalemate}
-                              checked={(chkingpiece && (kpid === pid))}
+                              // checked={(chkingpid && (kpid === pid))}
+                              checked={pid && kpid === pid}
                               selected={selected}
                               attacking={attckng}
                               attacked={attckd}

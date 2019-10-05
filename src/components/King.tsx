@@ -1,6 +1,6 @@
 import {Piece} from "./Piece";
 import {Rook} from "./Rook";
-import {SQID, PID, CARDINALS, ORDINALS, FILES, RANKS, IS_KING } from "./Model";
+import {SQID, PID, CARDINALS, ORDINALS, FILES, RANKS, IS_KING} from "./Model";
 import {Game} from "./Game";
 import {Board} from "./Board";
 
@@ -68,21 +68,8 @@ export class King extends Piece {
 			while(sqid = Board.nextSquare(drctn, sqid)) {
 				let pid: PID = null;
 				if ((pid = control.getPid(sqid)) && !(IS_KING.test(pid))) {
-					const
-						piece = control.getPiece(pid);
-						// pdrctns = piece.directions;
-					// if (piece.getSide() !== this.getSide() && !pdrctns.includes(drctn)) {
-					// 	shadowedPiece = piece;
-					// 	if (checkShadow) { break; }
-					// 	checkShadow = true;
-					// } else if (piece.getSide() !== this.getSide()) {
-					// 	if (checkShadow) {
-					// 		piece.directions.includes(drctn)
-					// 			? shadowedPiece.setKShadow(pid)
-					// 			: shadowedPiece.setKShadow(null);
-					// 	}
-					// 	break;
-					// }
+					const piece = control.getPiece(pid);
+
 					if (piece.getSide() === this.getSide()) {
 						break;
 					} else if (!piece.directions.includes(drctn)) {
@@ -103,7 +90,7 @@ export class King extends Piece {
 	}
 	protected castling(): SQID[] {
 		const
-			gc = Game.control,
+			control = Game.control,
 			side = this.pid[0],
 			rpids: PID[] = [side + 'KR', side + 'QR'];
 
@@ -111,7 +98,7 @@ export class King extends Piece {
 		if (!this.moved && !this.attckrs.length) { // king can't castle out of check
 			rpids.forEach((rpid) => {
 				const
-					rook: Rook = gc.getPiece(rpid) as Rook;
+					rook: Rook = control.getPiece(rpid) as Rook;
 				if (rook && !rook.moved && rook.getDfndng().includes(side + 'K')) {
 					const
 						side = rook.getSide(),
@@ -127,10 +114,7 @@ export class King extends Piece {
 	protected findLegalPositions() {
 		const
 			control = Game.control,
-			// pnnngPiece = control.getPiece(this.kpin),
-			// pnnngSqid = pnnngPiece ? pnnngPiece.getSqid() : null,
 			oppSide = this.getSide() === 'W' ? 'B' : 'W',
-			// ksqid = control.getPiece(oppSide + 'K'). getSqid(),
 			castleSquares = this.castling();
 
 		if (castleSquares.length) {
@@ -138,13 +122,6 @@ export class King extends Piece {
 		}
 
 		for (const sqid of this.potentials) {
-
-			// if (pnnngSqid) {
-			// 	if (!Board.intercepts(sqid, pnnngSqid, ksqid)) {
-			// 		continue;
-			// 	}
-			// }
-
 			const
 				adjacentPiece = control.getPiece(sqid), // NB: opposite side cos same side pieces not included in potentials
 				dfndrs = adjacentPiece ? adjacentPiece.getDfndrs() : [];

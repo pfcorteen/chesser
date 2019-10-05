@@ -1,6 +1,6 @@
 import { IPosition, IDeconMove, DIRECTION, DIRECTION_GROUP, ALL_DIRECTIONS, HALF_WINDS, CARDINALS, ORDINALS } from "./Model";
-import { FILES, PID, SIDE, SQID, PID_TO, SQUARE, ALGB_MOVE, IS_PID, IS_KING, IS_QUEEN, IS_ROOK, IS_BISHOP, IS_KNIGHT, IS_PAWN } from './Model';
-import { Game } from "./Game";
+import { FILES, PID, SIDE, SQID, PID_TO, PID_FROM_TO, SQUARE, ALGB_MOVE, IS_PID, IS_KING, IS_QUEEN, IS_ROOK, IS_BISHOP, IS_KNIGHT, IS_PAWN, BasicPieceRank } from './Model';
+// import { Game } from "./Game";
 import { Board } from "./Board";
 import { Knight } from "./Knight";
 import { Pawn } from "./Pawn";
@@ -50,7 +50,7 @@ export class GameControl {
      };
 
      static createPiece = (pid: PID, sqid: SQID): Piece => {
-          const p = pid[pid.length - 1];
+          // const p = pid[pid.length - 1];
           return IS_PAWN.test(pid) ? new Pawn(sqid, pid)
                : IS_KNIGHT.test(pid) ? new Knight(sqid, pid)
                     : IS_BISHOP.test(pid) ? new Bishop(sqid, pid)
@@ -85,14 +85,14 @@ export class GameControl {
           this.promotion = sqid;
      };
      getPid = (sqid: SQID): PID | null => {
-          return this.squares[sqid];
+          return this.sqidsToPids[sqid];
      };
      getPiece = (id: PID | SQID): Piece => {
           let
                piece: Piece;
 
           if (id in SQUARE) {
-               id = this.squares[id];
+               id = this.sqidsToPids[id];
           }
           piece = this.pieces[id];
           return piece || null;
@@ -110,10 +110,10 @@ export class GameControl {
                     sqid = p.getSqid();
                squares[sqid] = pid;
           });
-          this.squares = squares as { [key in SQID]: PID | null };
+          this.sqidsToPids = squares as { [key in SQID]: PID | null };
      };
      getSquares = () => {
-          return this.squares;
+          return this.sqidsToPids;
      };
      clonePieces = () => {
           let pieces = {};
@@ -145,7 +145,6 @@ export class GameControl {
      };
      private deconstructMove = (move: string): IDeconMove => {
           const
-               turn = Game.nextTurn,
                pieces = this.pieces,
                algbMatch = move.match(ALGB_MOVE),
                castling = (algbMatch[1] === 'O'),
@@ -153,16 +152,46 @@ export class GameControl {
                ep = ((algbMatch[4] && algbMatch[4] === 'ep') || false),
                promoPhaseOne = ((algbMatch[4] && algbMatch[4] === '=') || false),
                promo = (algbMatch[5] && algbMatch[5] !== 'O') ? algbMatch[5] : null,
-               ipid = (castling) ? (turn === 'W') ? 'WK' : 'BK' : algbMatch[1],
-               ipiece = pieces[ipid],
-               ifrom = ipiece.getSqid(),
-               ito = (castling) ? (algbMatch[5] && algbMatch[5] === 'O') ? (turn === 'W') ? 'c1' : 'c8' : (turn === 'W') ? 'g1' : 'g8' : algbMatch[3] as SQID,
-               epsquare = ep ? ito[0] + ifrom[1] : null,
-               idrctn = Board.getDirection(ifrom, ito),
-               rpid = castling ? ((ito[0] === 'g') ? ((ito[1] === '1') ? 'WKR' : 'BKR') : ((ito[1] === '1') ? 'WQR' : 'BQR')) : null,
-               rpiece = castling ? pieces[rpid] : null,
-               rfrom = castling ? rpiece.getSqid() : null,
-               rto = castling ? ((rpid[0] === 'W') ? ((rpid[1] === 'K') ? 'f1' : 'd1') : ((rpid[1] === 'K') ? 'f8' : 'd8')) : null;
+               mpid = (castling) ? (this.currentPlayer === 'W') ? 'WK' : 'BK' : algbMatch[1],
+               mpiece = pieces[mpid],
+               mfrom = mpiece.getSqid(),
+               mto = (castling)
+                         ? (algbMatch[5] && algbMatch[5] === 'O')
+                              ? (this.currentPlayer === 'W')
+                                   ? 'c1'
+                                   : 'c8'
+                              : (this.currentPlayer === 'W')
+                                   ? 'g1'
+                                   : 'g8'
+                         : algbMatch[3] as SQID,
+               epsquare = ep
+                              ? mto[0] + mfrom[1]
+                              : null,
+               mdrctn = Board.getDirection(mfrom, mto),
+               rpid = castling
+                         ? ((mto[0] === 'g')
+                              ? ((mto[1] === '1')
+                                   ? 'WKR'
+                                   : 'BKR')
+                              : ((mto[1] === '1')
+                                   ? 'WQR'
+                                   : 'BQR'))
+                         : null,
+               rpiece = castling
+                         ? pieces[rpid]
+                         : null,
+               rfrom = castling
+                         ? rpiece.getSqid()
+                              : null,
+               rto = castling
+                         ? ((rpid[0] === 'W')
+                              ? ((rpid[1] === 'K')
+                                   ? 'f1'
+                                   : 'd1')
+                              : ((rpid[1] === 'K')
+                                   ? 'f8'
+                                   : 'd8'))
+                         : null;
 
           return {
                castling: castling,
@@ -171,11 +200,11 @@ export class GameControl {
                capture: capture,
                promoPhaseOne: promoPhaseOne,
                promo: promo,
-               ipid: ipid,
-               ipiece: ipiece,
-               ifrom: ifrom,
-               ito: ito,
-               idrctn: idrctn,
+               mpid: mpid,
+               mpiece: mpiece,
+               mfrom: mfrom,
+               mto: mto,
+               mdrctn: mdrctn,
                rpid: rpid,
                rpiece: rpiece,
                rfrom: rfrom,
@@ -186,8 +215,8 @@ export class GameControl {
           // if piece on fromsqid is moved will there be discovered check?
           // if piece moves to tosqid will it's king be in check?
           const
-               oppside: SIDE = ((Game.nextTurn === 'W') ? 'B' : 'W') as SIDE,
-               kpid: PID = ((Game.nextTurn === 'W') ? 'WK' : 'BK') as PID,
+               oppside: SIDE = ((this.currentPlayer === 'W') ? 'B' : 'W') as SIDE,
+               kpid: PID = ((this.currentPlayer === 'W') ? 'WK' : 'BK') as PID,
                king: Piece = this.getPiece(kpid),
                ksqid: SQID = king.getSqid(),
                movingpiece: Piece = this.getPiece(fromsqid),
@@ -229,37 +258,41 @@ export class GameControl {
           }
           return false;
      };
-     escapesCheck = (checking: SQID[], fromsqid: SQID, tosqid: SQID): boolean => {
-          if (checking.length === 0) {
-               return true;
-          }
+     escapesCheck = (fromsqid: SQID, tosqid: SQID): boolean => {
           const
                movingpiece = this.getPiece(fromsqid),
                mvngside = movingpiece.getSide(),
                oppside = (mvngside === 'W') ? 'B' : 'W',
-               checkkedKingPid = ((mvngside === 'W') ? 'WK' : 'BK') as PID,
-               checkedKingSqid = this.getPiece(checkkedKingPid).getSqid();
+               myKingPid = ((mvngside === 'W') ? 'WK' : 'BK') as PID,
+               myKing = this.getPiece(myKingPid),
+               checkers: PID[] = myKing.getAttckrs(),
+               myKingSqid = myKing.getSqid();
 
-          if (movingpiece instanceof King) {
+          if (checkers.length === 0) {
+               return true;
+          } else if (movingpiece instanceof King) {
                const cb = this.checkedBy(tosqid, oppside);
                if (cb.length > 0) {
                     return false;
                }
                return true;
-          } else if (Board.intercepts(tosqid, checking[0], checkedKingSqid)) {
-               return true;
+          } else {
+               for (const chkr of checkers) {
+                    const chkrSqid = this.getPiece(chkr).getSqid();
+                    if (Board.intercepts(tosqid, chkrSqid, myKingSqid)) {
+                         return true;
+                    }
+               }
           }
 
           return false;
      };
-     checkedBy = (subject: SQID, checkingSide: SIDE): Piece[] => {
-          const pieceBuffer: Piece[] = [];
-          // if (subject === 'e5') {
-          //      console.log('WKBP at e5 ?');
-          // }
+     checkedBy = (target: SQID, checkingSide: SIDE): Piece[] => {
+          const
+               pieceBuffer: Piece[] = [];
           for (const drctn of ALL_DIRECTIONS) {
                let
-                    sqid: SQID = subject,
+                    sqid: SQID = target,
                     firstStep = true;
 
                while (sqid = Board.nextSquare(drctn, sqid)) {
@@ -315,8 +348,96 @@ export class GameControl {
           }
           return pieceBuffer;
      };
-     isCheckMate = (king: King): boolean => {
+     isCheckMatePreMove = (king: King, nextMove?: PID_FROM_TO): boolean => {
           // should only be called when king is checked, therefore must be one or two attackers
+          // if nextmove is present then the assessment is pre-move, else the assessment
+          // is post-move and the 'nextMove' parameter unnecessary
+          const
+               [ mpid, mfrom, mto ] = nextMove,
+               kpid = king.getPid(),
+               ksqid = king.getSqid(),
+               mpiece: Piece = this.getPiece(mpid),
+               checkdrctn: DIRECTION = Board.getDirection(mto, ksqid),
+               mcheck: boolean = (Board.alignedWith(mto, checkdrctn) === king),
+               shadowedPid: PID = mpiece ? mpiece.getKShadow() : null, // promoting pawn dissappears
+               sPiece = shadowedPid ? this.getPiece(shadowedPid) : null,
+               ssqid  = shadowedPid ? sPiece.getSqid(): null,
+               cpid = this.sqidsToPids[mto]; // newMove may include a capture
+
+          let
+               csqid: SQID = null, // later used for single check sqid
+               klegals = king.getLegals(),
+               scheck: boolean = false; // shadowed piece delivers check?
+
+          if (klegals.length) {
+               const
+                    mtoKingSqids = Board.fromDirectionSquares(mto, checkdrctn),
+                    shadowDrctn: DIRECTION = Board.getDirection(mfrom, ksqid);
+
+               klegals = klegals.filter(lgl => { return !mtoKingSqids.includes(lgl); } );
+
+               if (shadowedPid && checkdrctn !== shadowDrctn) { // shadowed piece exposed so must be checked
+                    scheck = true;
+                    const mfromSqids = Board.fromDirectionSquares(mfrom, shadowDrctn);
+                    klegals = klegals.filter(lgls => { return !mfromSqids.includes(lgls); } );
+               }
+
+               if (klegals.length) {
+                    return false; // not mate because king can still move
+               } else if (mcheck && scheck) {
+                    return true; // mate because king cannot move and double check
+               }
+
+          }
+
+          // check from a single piece - from which square?
+          csqid = mcheck ? mto : ssqid;
+
+          // at this point we know king can't move and only a single check on king
+          // so can checking piece be taken ?
+          const
+               checkedPlayer = this.currentPlayer === 'W' ? 'B' : 'W',
+               oppPidArray: PID[] = this.getPidArray(checkedPlayer);
+          for (const opid of oppPidArray) {
+               if (opid !== cpid) { // not a captured piece
+                    const
+                         opiece = this.getPiece(opid),
+                         olegals = opiece.getLegals();
+                    if (olegals.includes(csqid)) { // sinlge checking piece can be captured
+                         if (IS_PAWN.test(opid) && (opiece.getSqid()[0] === mto[0])) {
+                              continue;
+                         }
+                         return false; // not mate
+                    }
+               }
+          }
+
+          // finally can the check be intercepter?
+          const
+               isqids: SQID[] = Board.betweenSquares(csqid, ksqid);
+          for (const ipid of oppPidArray) {
+               if (ipid !== cpid && !IS_KING.test(ipid)) { // not a captured piece or the checked king
+                    const
+                         ipiece = this.getPiece(ipid),
+                         ilegals = ipiece.getLegals();
+                    for (const ilsqid of ilegals) {
+                         if (isqids.includes(ilsqid)) {
+                              if (IS_PAWN.test(ipid) && (ipiece.getSqid()[0] === mto[0])) {
+                                   continue;
+                              }
+                              return false; // not mate
+                         }
+                    }
+               }
+          }
+
+          // check piece untakeable and can't be intercepted
+          return true; // mate
+     }
+     isCheckMatePostMove = (king: King): boolean => {
+          // should only be called when king is checked, therefore must be one or two attackers
+          // if nextmove is present then the assessment is pre-move, else the assessment
+          // is post-move and the 'nextMove' parameter unnecessary
           const
                kpid = king.getPid(),
                attackers = king.getAttckrs(),
@@ -420,7 +541,6 @@ export class GameControl {
           });
           return [whitePids, blackPids];
      }
-     // interceptAlignment = (attacked: Piece, attacking: Piece): PID_TO[] => {
      interceptAlignment = (attacked: Piece, attckngSqid: SQID): PID_TO[] => {
           const
                attackedPid = attacked.getPid(),
@@ -456,43 +576,68 @@ export class GameControl {
           return pidToArray;
      }
      processAlgebraicMove = (move: string): IPosition => {
-          if (move === 'compute') {
-               console.log('processAlgebraicMove encountered compute');
-          }
           const {
-               castling, ep, epsquare, capture, promoPhaseOne, promo,
-               ipid, ipiece, ifrom, ito, idrctn,
-               rpid, rpiece, rfrom, rto
-          } = this.deconstructMove(move);
+                    castling, ep, epsquare, capture, promoPhaseOne, promo,
+                    mpid, mpiece, mfrom, mto, mdrctn,
+                    rpid, rpiece, rfrom, rto
+               } = this.deconstructMove(move),
+               postMoveProcessing = (): void => {
+                    const
+                         shadowing = mpiece.getKShadow(),
+                         oppkpid = (this.currentPlayer === 'W') ? 'BK' : 'WK',
+                         oppking = this.getPiece(oppkpid),
+                         oppksqid = oppking.getSqid(),
+                         pmdrctn = Board.getDirection(mto, oppksqid);
 
-          if (ifrom === ito) {
+                    // if (Board.alignedWith(mto, pmdrctn) === oppking || shadowing) {
+                    if ((mpiece.directions.includes(pmdrctn) && Board.alignedWith(mto, pmdrctn) === oppking) || shadowing) {
+                         move += (this.isCheckMatePreMove(oppking as King, [mpid, mfrom, mto])) ? '#' : '+';
+                    }
+               };
+
+          if (mfrom === mto) {
                // must be promotion phase 2
-               promo && this.capture(ipid);
-               promo && this.promote(promo, ito);
-
+               promo && this.capture(mpid);
+               promo && this.promote(promo, mto);
           } else {
-               capture && this.capture(ito);
+               capture && this.capture(mto);
                ep && this.capture(epsquare, epsquare);
 
-               ipiece.setSqid(ito);
-               ipiece.auxiliaryAction(ito, this);
+               mpiece.setSqid(mto);
+               mpiece.auxiliaryAction(mto, this);
 
-               this.sqidUpdateArray.push(ifrom);
-               this.sqidUpdateArray.push(ito);
+               this.sqidUpdateArray.push(mfrom);
+               this.sqidUpdateArray.push(mto);
 
                if (castling) {
                     rpiece.setSqid(rto);
-                    ipiece.auxiliaryAction(rto, this);
+                    mpiece.auxiliaryAction(rto, this);
                     this.sqidUpdateArray.push(rfrom);
                     this.sqidUpdateArray.push(rto);
                }
           }
+
+          if (!(/.*=$/.test(move))) {
+               postMoveProcessing();
+               this.currentPlayer = (this.currentPlayer === 'W') ? 'B' : 'W';
+          }
+
+          const prevMove = this.moves[this.moves.length - 1] || null;
+          if (/.*=$/.test(prevMove)) {
+               this.moves[this.moves.length - 1] = move;
+          } else {
+               this.moves.push(move);
+          }
+
           this.assembleSquares();
-          return { squaresToPieces: this.squares };
+          return {
+               moves: this.moves,
+               sqidsToPids: this.sqidsToPids
+          };
      }
      capture = (id: PID | SQID, ep: SQID = null): void => {
           const
-               pid = (id in SQUARE) ? this.squares[id] : id,
+               pid = (id in SQUARE) ? this.sqidsToPids[id] : id,
                p = this.getPiece(pid),
                sq = p.getSqid();
           delete this.pieces[pid];
@@ -531,12 +676,32 @@ export class GameControl {
           });
           return arr;
      };
+     public getPieceWorth = (pid: PID): number => {
+          const piecetype = pid[pid.length - 1];
+          let score: number = parseInt(BasicPieceRank[piecetype]);
+          const piece = this.getPiece(pid);
+          const sqid = piece ? piece.getSqid() : 0;
+          // some TODO here
+          score = IS_PAWN.test(pid) ? (sqid ? parseInt(sqid[1]) : 0) : score;
+          score += piece ? piece.getPotentials().length : 0;
+          return score;
+     };
+     public setCurrentPlayer = (player: SIDE): void => {
+          this.currentPlayer = player;
+     }
+     public getCurrentPlayer = (): SIDE => {
+          return this.currentPlayer;
+     }
+     public getMoves =(): string[] => { return this.moves; }
+
      private pieces: { [key in PID]: Piece } = null; // hash PID to Pieces
-     private squares: { [key in SQID]: PID } = null; // hash SQID to PID
+     private sqidsToPids: { [key in SQID]: PID } = null; // hash SQID to PID
      private captures: PID[] = [];
      private enPassant: SQID = null;
      private promotion: SQID = null;
      private sqidUpdateArray: SQID[] = [];
+     private currentPlayer: SIDE = null;
+     private moves: string[] = [];
 
      constructor(piecePositions: { [key in PID]: SQID; } | null) {
 
@@ -584,7 +749,7 @@ export class GameControl {
                }
           };
           this.pieces = new Proxy(boardProxyInstance, new Proxy({}, metahandler));
-
+          this.moves = [];
           this.assembleSquares();
      }
 }

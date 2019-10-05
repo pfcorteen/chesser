@@ -27,8 +27,8 @@ export class Pawn extends Piece {
 					westSqid: SQID = Board.nextSquare(DIRECTION.W, sqid),
 					eastPid: PID = control.getPid(eastSqid),
 					westPid: PID = control.getPid(westSqid),
-					side = (this.getSide() === 'W') ? 'B' : 'W',
-					rgxp = new RegExp('^' + side + '.*' + 'P$');
+					oppside = (this.getSide() === 'W') ? 'B' : 'W',
+					rgxp = new RegExp('^' + oppside + '.*' + 'P$');
 
 				if ((eastPid && eastPid.match(rgxp)) || (westPid && westPid.match(rgxp))) {
 					control.setEnPassant(sqid);
@@ -66,23 +66,11 @@ export class Pawn extends Piece {
 		const
 			control = Game.control,
 			enPassant = control.getEnPassant();
-			// pnnngPiece = control.getPiece(this.kpin),
-			// pnnngSqid = pnnngPiece ? pnnngPiece.getSqid() : null,
-			// kpid = (this.getSide() === 'W' ? 'B' : 'W') + 'K',
-			// ksqid = control.getPiece(kpid).getSqid();
 
-	// this.potentials.forEach(sqid => {
-	for (const sqid of this.potentials) {
-
-			// if (pnnngSqid) {
-			// 	if (!Board.intercepts(sqid, pnnngSqid, ksqid)) {
-			// 		continue;
-			// 	}
-			// }
-
+		for (const sqid of this.potentials) {
 			const
 				[file, rank] = sqid,
-				side: SIDE = this.getSide(),
+				myside: SIDE = this.getSide(),
 				ahead = (file === this.sqid[0]),
 				cpid: PID = control.getPid(sqid); // note: own cpids accounted for in Piece.getPotentialSquares
 
@@ -90,11 +78,10 @@ export class Pawn extends Piece {
 				if (cpid) {
 					continue;
 				} else {
-					if ((rank === '3' && side === 'W') || (rank === '6' && side === 'B')) {
-						const extrasqid: SQID = (file + ((side === 'W') ? '4' : '5')) as SQID;
+					if ((rank === '3' && myside === 'W') || (rank === '6' && myside === 'B')) {
+						const extrasqid: SQID = (file + ((myside === 'W') ? '4' : '5')) as SQID;
 						if (!control.getPid(extrasqid)) {
 							this.legals.push(extrasqid);
-							// this.potentials.push(extrasqid);
 						}
 					}
 					this.legals.push(sqid);
@@ -102,12 +89,12 @@ export class Pawn extends Piece {
 			} else { // not ahead
 				if (cpid) {
 					this.legals.push(sqid);
-				} else if (enPassant && (rank === ((Game.nextTurn === 'W') ? '6' : '3'))) {
-					const epPawnSqid = (rank === '6')
-						? Board.nextSquare(DIRECTION.S, sqid)
-						: Board.nextSquare(DIRECTION.N, sqid);
+				} else if (enPassant) {
+					const
+						drctn = (rank === '6') ? DIRECTION.S : DIRECTION.N,
+						bypassSqid = Board.nextSquare(drctn, sqid);
 
-					if (epPawnSqid === enPassant) {
+					if (bypassSqid === enPassant) {
 						this.legals.push(sqid);
 					}
 				}

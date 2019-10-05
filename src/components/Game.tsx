@@ -7,7 +7,8 @@ import { Captures } from "./Captures";
 import { Promotion } from "./Promotion";
 import { ComputedMove } from "./ComputedMove";
 import { DrawChecker } from "./DrawChecker";
-import { IGamePosition, IGame, ITest, IPosition, IS_PID, SIDE, SQID, PID, FILES, PLAYER, PLAYERS, DIRECTION } from "./Model";
+import { IGamePosition, IGame, ITest, IPosition, IMoveEffect } from "./Model";
+import { GAME_RESULT, IS_PID, IS_KING, IS_PHASE_ONE_PROMO, SIDE, SQID, PID, FILES, PLAYER, PLAYERS, DIRECTION } from "./Model";
 import { GameControl } from "./GameControl";
 import { ConfigurationControls } from "./ConfigurationControls"
 
@@ -15,7 +16,8 @@ export class Game extends React.Component<IGame, IGamePosition> {
 
      public static control: GameControl;
      public static firstTurn: SIDE = 'W';
-     public static nextTurn: SIDE = Game.firstTurn;
+     private static gameOn = false;
+     // public static nextTurn: SIDE = Game.firstTurn;
 
      public drawChecker = new DrawChecker();
      public checked = false;
@@ -27,43 +29,80 @@ export class Game extends React.Component<IGame, IGamePosition> {
      private paused: boolean = false;
 
      public static getDerivedStateFromProps(props, state: IGamePosition): IGamePosition {
-          let newState: IGamePosition = null;
-          if (!Game.control || (props.test !== state.test)) {
+          let
+               newState: IGamePosition = null,
+
+               newMove: IMoveEffect = {
+                    selectedSquare: state.selectedSquare,
+                    legals: state.legals,
+                    attacking: state.attacking,
+                    attacked: state.attacked,
+                    defending: state.defending,
+                    defended: state.defended
+               },
+               emptyMove: IMoveEffect = {
+                    selectedSquare: null,
+                    legals: [],
+                    attacking: [],
+                    attacked: [],
+                    defending: [],
+                    defended: []
+               };
+
+          // if (props.test && (props.test.name !== ((state.test) ? state.test.name : null))) {
+          //      const piecePositions = props.test ? props.test.piecePositions : null;
+          //      Game.control = new GameControl(piecePositions);
+          //      Game.control.setCurrentPlayer(props.test ? props.test.firstTurn : Game.firstTurn);
+          //      newMove = emptyMove;
+          // } else if (state.sqidsToPids === null) {
+          //      Game.control = new GameControl(null);
+          //      Game.control.setCurrentPlayer(Game.firstTurn);
+          //      newMove = emptyMove;
+          // } else if (props.test === null) {
+          //      Game.control = new GameControl(null);
+          //      Game.control.setCurrentPlayer(Game.firstTurn);
+          // } else {
+          //      console.log('Game state what else?');
+          // }
+          if (props.test && (props.test.name !== ((state.test) ? state.test.name : null))) {
                const piecePositions = props.test ? props.test.piecePositions : null;
                Game.control = new GameControl(piecePositions);
-               Game.nextTurn = props.test ? props.test.firstTurn : Game.nextTurn;
-               newState = {
-                    squaresToPieces: Game.control.getSquares(),
-                    turn: Game.nextTurn,
-                    selectedSquare: null,
-                    legals: [] as SQID[],
-                    attacking: [] as SQID[],
-                    attacked: [] as SQID[],
-                    defending: [] as SQID[],
-                    defended: [] as SQID[],
-                    whiteCaptures: [] as PID[],
-                    blackCaptures: [] as PID[],
-                    moves: [] as string[],
-                    checking: [] as SQID[],
-                    promotion: null,
-                    test: props.test
-               };
-          } else {
-               newState = state;
-               newState.squaresToPieces = Game.control.getSquares();
+               Game.control.setCurrentPlayer(props.test ? props.test.firstTurn : Game.firstTurn);
+               newMove = emptyMove;
+               Game.gameOn = false;
+          } else if (!Game.gameOn && props.test === null) {
+                   Game.control = new GameControl(null);
+                   Game.control.setCurrentPlayer(Game.firstTurn);
+                   newMove = emptyMove;
+                   Game.gameOn = true;
+               // Game.control = new GameControl(null);
+               // Game.control.setCurrentPlayer(Game.firstTurn);
           }
 
           Game.control.assemblePieceData();
+          newState = {
+               sqidsToPids: Game.control.getSquares(), // IPosition
+               moves: Game.control.getMoves(), // IPosition
+               selectedSquare: newMove.selectedSquare, // IMove
+               legals: newMove.legals, // IMove
+               attacking: newMove.attacking, // IMove
+               attacked: newMove.attacked, // IMove
+               defending: newMove.defending, // IMove
+               defended: newMove.defended, // IMove
+               whiteCaptures: state.whiteCaptures,
+               blackCaptures: state.blackCaptures,
+               promotion: state.promotion,
+               test: props.test,
+          };
+
           return newState;
      }
-
-     constructor(props) {
+     constructor(props: IGame) {
           super(props);
 
-          Game.nextTurn = (props.test) ? props.test.firstTurn : Game.firstTurn;
           this.state = {
-               squaresToPieces: null,
-               turn: Game.nextTurn,
+               moves: [] as string[],
+               sqidsToPids: null,
                selectedSquare: null,
                legals: [] as SQID[],
                attacking: [] as SQID[],
@@ -72,26 +111,28 @@ export class Game extends React.Component<IGame, IGamePosition> {
                defended: [] as SQID[],
                whiteCaptures: [] as PID[],
                blackCaptures: [] as PID[],
-               moves: [] as string[],
-               checking: [] as SQID[],
                promotion: null,
                test: null,
           };
+
+          Game.control = new GameControl(null);
+          Game.control.setCurrentPlayer(Game.firstTurn);
      }
 
      public selectSquare = (selected: SQID): void => {
           const
-               gc = Game.control,
+               control = Game.control,
                selectedSquare = this.state.selectedSquare,
                moves = this.state.moves,
+               pid = control.getPid(selected),
                lastMove = (moves.length) ? moves[moves.length - 1] : null,
                blackCaptures: PID[] = [],
                whiteCaptures: PID[] = [],
-               enPassant: SQID = gc.getEnPassant(),
-               sqidsFromPids = (pids: PID[]): SQID[] => {
+               enPassant: SQID = control.getEnPassant(),
+               pidsToSqids = (pids: PID[]): SQID[] => {
                     let sqids: SQID[] = [];
                     pids.forEach((pid) => {
-                         const piece = gc.getPiece(pid);
+                         const piece = control.getPiece(pid);
                          if (piece) {
                               sqids.push(piece.getSqid());
                          }
@@ -99,41 +140,41 @@ export class Game extends React.Component<IGame, IGamePosition> {
                     return sqids;
                };
 
-          if (this.paused) {
-               return;
-          }
-
-          if (lastMove && lastMove.endsWith('#')) {
-               return;
-          }
-
           let
                mpid: PID,
                mpiece: Piece,
                sqid: SQID = null,
-               checking: SQID[] = this.state.checking,
                legals = this.state.legals,
                defending = this.state.defending,
                defended = this.state.defended,
                attacking = this.state.attacking,
                attacked = this.state.attacked,
-               position = { squaresToPieces: gc.getSquares() } as IPosition;
+               position = { sqidsToPids: control.getSquares() } as IPosition;
 
-          if (legals.includes(selected)) {
-               if (gc.escapesCheck(checking, selectedSquare, selected)) {
-                    checking = [];
-                    if (!gc.selfCheck(selectedSquare, selected)) {
-
-                         const cpid = gc.getPid(selected);
+          if (this.paused || (lastMove && lastMove.endsWith('#'))) {
+               this.nextMove = (lastMove[0] === 'W') ? '1-0' : '0-1',
+               moves[moves.length] = this.nextMove;
+          } else if ((pid && IS_KING.test(pid) && pid[0] !== control.getCurrentPlayer())
+                         || this.drawChecker.isGameDrawn(moves)) {
+               // NNB: in case where a move is not possible then the opposite king is clicked by the computedMove
+               // can also easily adapt this to cater for resignatins also!! or No?
+               //possible draw
+               this.nextMove = '1/2-1/2';
+               moves[moves.length] = this.nextMove;
+          } else  if (legals.includes(selected)) {
+               if (control.escapesCheck(selectedSquare, selected)) {
+                    if (!control.selfCheck(selectedSquare, selected)) {
+                         const
+                              cpid = control.getPid(selected);
                          if (cpid) {
                               this.nextMove += 'x'; // capture
                          }
                          this.nextMove += selected;
 
-                         mpiece = gc.getPiece(selectedSquare); // obviate!
+                         mpiece = control.getPiece(selectedSquare); // obviate!
                          mpid = mpiece.getPid();
 
-                         gc.setEnPassant(null);
+                         control.setEnPassant(null);
 
                          if (mpiece instanceof King) {
                               const
@@ -142,7 +183,7 @@ export class Game extends React.Component<IGame, IGamePosition> {
                               if (Math.abs(ff - tf) === 2) {
                                    // castling
                                    this.nextMove = (selected[0] === 'c') ? 'O-O-O' : 'O-O';
-                                   position = gc.processAlgebraicMove(this.nextMove);
+                                   // position = control.processAlgebraicMove(this.nextMove);
                               }
                          } else if (mpiece instanceof Pawn) {
                               if ((selected[1] === '8' || selected[1] === '1')) {
@@ -160,11 +201,8 @@ export class Game extends React.Component<IGame, IGamePosition> {
                               }
                          }
 
-                         // mpiece.auxiliaryAction(selected, null);
-                         position = gc.processAlgebraicMove(this.nextMove);
+                         position = control.processAlgebraicMove(this.nextMove);
 
-                         Game.nextTurn = (Game.nextTurn === 'W') ? 'B' : 'W';
-                         moves.length ? moves[moves.length] = this.nextMove : moves[0] = this.nextMove;
                          this.checked = false;
                     }
                }
@@ -176,27 +214,26 @@ export class Game extends React.Component<IGame, IGamePosition> {
                defended = [] as SQID[];
 
                // before nextMove is erazed check static function isDrawnGame: boolean
-               if (this.drawChecker.isGameDrawn(moves)) {
-                    this.nextMove += '=';
-                    moves[moves.length - 1] = this.nextMove;
-               }
+               // if (this.drawChecker.isGameDrawn(moves)) {
+               //      this.nextMove += '=';
+               //      moves[moves.length - 1] = this.nextMove;
+               // }
           }
           else if (!selectedSquare) {
 
-               mpid = gc.getPid(selected);
+               mpid = control.getPid(selected);
                this.nextMove = mpid;
 
-               mpiece = gc.getPiece(selected);
-               if (mpiece && (mpiece.getSide() === Game.nextTurn)) {
+               mpiece = control.getPiece(selected);
+               if (mpiece && (mpiece.getSide() === control.getCurrentPlayer())) {
                     legals = mpiece.getLegals();
-                    attacking = sqidsFromPids(mpiece.getAttckng());
-                    attacked = sqidsFromPids(mpiece.getAttckrs());
-                    defending = sqidsFromPids(mpiece.getDfndng());
-                    defended = sqidsFromPids(mpiece.getDfndrs());
+                    attacking = pidsToSqids(mpiece.getAttckng());
+                    attacked = pidsToSqids(mpiece.getAttckrs());
+                    defending = pidsToSqids(mpiece.getDfndng());
+                    defended = pidsToSqids(mpiece.getDfndrs());
                     sqid = selected;
                }
           } else {
-
                this.nextMove = null;
                moves.splice(-1, 1);
                sqid = null;
@@ -207,7 +244,7 @@ export class Game extends React.Component<IGame, IGamePosition> {
                defended = [] as SQID[];
           }
 
-          gc.getCaptures().forEach((pid) => {
+          control.getCaptures().forEach((pid) => {
                if (pid[0] === 'W') {
                     whiteCaptures.push(pid);
                } else {
@@ -216,11 +253,9 @@ export class Game extends React.Component<IGame, IGamePosition> {
           });
 
           this.setState({
-               squaresToPieces: position.squaresToPieces,
-               turn: Game.nextTurn,
+               sqidsToPids: position.sqidsToPids,
                selectedSquare: sqid,
                moves: moves,
-               checking: checking,
                legals: legals,
                attacking: attacking,
                attacked: attacked,
@@ -235,24 +270,24 @@ export class Game extends React.Component<IGame, IGamePosition> {
           if (this.paused) { return; }
 
           const
-               gc = Game.control,
+               control = Game.control,
                moves = this.state.moves,
                s = (pid[0] === 'W') ? 'W' : 'B',
                pn = Promotion.getNextPromotionNumber(),
                p = pid[pid.length - 1],
                ppid = s + pn + p,
-               prmtn = gc.getPromotion();
+               prmtn = control.getPromotion();
 
           let position: IPosition;
 
           this.nextMove += ppid;
-          position = gc.processAlgebraicMove(this.nextMove);
+          position = control.processAlgebraicMove(this.nextMove);
           this.checked = false; // ensure fresh check via giveCheck is performed after promotion
 
           moves[moves.length - 1] = this.nextMove;
           setTimeout(() => {
                this.setState({
-                    squaresToPieces: position.squaresToPieces,
+                    sqidsToPids: position.sqidsToPids,
                     moves: moves,
                     selectedSquare: null,
                     legals: [] as SQID[],
@@ -261,31 +296,36 @@ export class Game extends React.Component<IGame, IGamePosition> {
           });
      };
      handleNewGameRequest = (): void => {
+          Game.gameOn = false;
           this.props.onRunTests(false);
      }
      handlePlayerSelection = (ps: string): void => {
-          if (this.paused) { return; }
-
-          if (ps === "test") {
-               console.log("test");
-               this.props.onRunTests(true);
-          } else {
-               const
-                    players: PLAYERS = ps.split(' v ') as PLAYERS,
-                    [white, black] = players;
-               this.players = [white as PLAYER, black as PLAYER];
-               console.log(`White: ${this.players[0]} Black: ${this.players[1]}`);
-               let nextPlayer = (Game.nextTurn === 'W') ? this.players[0] : this.players[1];
-               if (nextPlayer === 'computer') {
-                    window.setTimeout(this.computedMove.compute, 10, null); // null cos no moves made yet
+          if (!this.paused) {
+               if (ps === "Run Tests") {
+                    console.log("Run Tests");
+                    this.props.onRunTests(true);
+               } else if (ps === "New Game") {
+                    console.log("New Game");
+                    this.props.onRunTests(false);
+               } else {
+                    const
+                         players: PLAYERS = ps.split(' v ') as PLAYERS,
+                         [white, black] = players;
+                    this.players = [white as PLAYER, black as PLAYER];
+                    console.log(`White: ${this.players[0]} Black: ${this.players[1]}`);
+                    // let nextPlayer = (Game.nextTurn === 'W') ? this.players[0] : this.players[1];
+                    let nextPlayer = (Game.control.getCurrentPlayer() === 'W') ? this.players[0] : this.players[1];
+                    if (nextPlayer === 'computer') {
+                         window.setTimeout(this.computedMove.compute, 10, null); // null cos no moves made yet
+                    }
                }
           }
      }
      handleFlipOrientation = (): void => {
-          if (this.paused) { return; }
-
-          this.orientation = this.orientation === 'W' ? 'B' : 'W';
-          this.forceUpdate();
+          if (!this.paused) {
+               this.orientation = this.orientation === 'W' ? 'B' : 'W';
+               this.forceUpdate();
+          }
      }
      handleFlipSquareHighlights = (): void => {
           this.squareHighlights = !this.squareHighlights;
@@ -297,12 +337,10 @@ export class Game extends React.Component<IGame, IGamePosition> {
      runtest = (test: ITest): void => {
           if (this.paused) { setTimeout(this.runtest, 1000, test); }
           const
-               gc = Game.control,
+               control = Game.control,
                tmoves: string[] = [].concat(...test.moves),
                smoves: string[] = [].concat(...this.state.moves),
                last = smoves.length - 1,
-               turn = (Game.nextTurn === 'W') ? 'B' : 'W',
-               // turn = (last === -1) ? test.nTurn : (smoves[last][0] === 'W') ? 'B' : 'W',
                legals = this.state.legals,
                attacking = this.state.attacking,
                attacked = this.state.attacked,
@@ -317,7 +355,9 @@ export class Game extends React.Component<IGame, IGamePosition> {
                     console.log(`${test.name} moves are ${smoves} result is ${result ? 'pass' : 'fail'}`);
                };
 
-          let move, lastStateMove, lastTestMove, secondPhase: boolean, position: IPosition;
+          let
+               secondPhase = false,
+               move: string, lastStateMove: string, lastTestMove: string, position: IPosition;
 
           if (smoves.length === 0) {
                move = tmoves[0];
@@ -328,23 +368,22 @@ export class Game extends React.Component<IGame, IGamePosition> {
           } else {
                lastStateMove = smoves[smoves.length - 1];
                lastTestMove = tmoves[last];
-               if ((lastTestMove as string) === 'compute') {
+
+               if (tmoves.length === smoves.length && lastStateMove === lastTestMove) {
                     checkTestResult();
                     this.props.onTestCompleted();
                     return;
-               } else
-                    if (lastTestMove && lastStateMove !== lastTestMove) {
-                         secondPhase = lastTestMove.startsWith(lastStateMove);
-                         move = lastTestMove;
-                    } else
-                         if (last < tmoves.length - 1) {
-                              move = tmoves[last + 1];
-                         }
-                         else {
-                              checkTestResult();
-                              this.props.onTestCompleted();
-                              return;
-                         }
+               // } else if (lastTestMove && lastTestMove.startsWith(lastStateMove)) {
+               } else if (lastTestMove && /.*=$/.test(lastStateMove)) {
+                    secondPhase = true;
+                    move = lastTestMove;
+               } else if (last < tmoves.length - 1) {
+                    move = tmoves[last + 1];
+               } else {
+                    checkTestResult();
+                    this.props.onTestCompleted();
+                    return;
+               }
           }
 
           let idx = -1;
@@ -353,29 +392,23 @@ export class Game extends React.Component<IGame, IGamePosition> {
           }
 
           if (move === 'compute') {
-               // window.setTimeout(this.computedMove.compute, 50, move);
                window.setTimeout(this.computedMove.compute, 50, lastStateMove);
-               return;
           } else {
-               position = gc.processAlgebraicMove(move);
+               position = control.processAlgebraicMove(move);
+               secondPhase ? (smoves[smoves.length - 1] = lastTestMove) : smoves.push(move);
+               this.setState({
+                    sqidsToPids: position.sqidsToPids,
+                    moves: position.moves,
+                    selectedSquare: null,
+                    legals: legals,
+                    attacking: attacking,
+                    attacked: attacked,
+                    defending: defending,
+                    defended: defended,
+                    blackCaptures: blackCaptures,
+                    whiteCaptures: whiteCaptures,
+               });
           }
-
-          secondPhase ? (smoves[smoves.length - 1] = lastTestMove) : smoves.push(move);
-
-          this.setState({
-               squaresToPieces: position.squaresToPieces,
-               turn: turn,
-               selectedSquare: null,
-               moves: smoves,
-               checking: [],
-               legals: legals,
-               attacking: attacking,
-               attacked: attacked,
-               defending: defending,
-               defended: defended,
-               blackCaptures: blackCaptures,
-               whiteCaptures: whiteCaptures,
-          });
      }
      componentDidMount() {
           const test = this.props.test;
@@ -383,68 +416,62 @@ export class Game extends React.Component<IGame, IGamePosition> {
      }
      componentDidUpdate(prevProps: IGame, prevState: IGamePosition) {
           const
-               gc = Game.control,
+               control = Game.control,
+               currentPlayer = control.getCurrentPlayer(),
+               nextPlayer = (currentPlayer === 'W') ? this.players[0] : this.players[1],
                moves = this.state.moves,
-               lastMove = moves.length ? moves[moves.length - 1] : '';
+               nmoves = moves.length,
+               lastMove = (moves.length) ? moves[moves.length - 1] : null;
 
-          if (this.state.squaresToPieces !== prevState.squaresToPieces) {
-               gc.updateData();
-          }
-          // console.log(`Move ${moves.length}: Piece placement change ${this.state.squaresToPieces !== prevState.squaresToPieces}`);
-          //
-          // // first update the piece data
-          // if (this.props.test) {
-          //      if (lastMove.length && !lastMove.endsWith('=')) {
-          //           gc.updateData();
-          //      }
-          // } else if ((prevState.selectedSquare && !this.state.selectedSquare && !lastMove.endsWith('='))
-          //      || (lastMove.includes('=') && !lastMove.endsWith('='))) {
-          //      // we dont want to be updating the piece data unnecessarily in every rendering cycle
-          //      // the condition should limit the update to the situation just after a move has been made,
-          //      // and will ignore piece selection and check/checkmate renders and promotion first phase
-          //      gc.updateData();
-          // }
 
-          const
-               kpid = (this.state.turn === 'W') ? 'WK' : 'BK',
-               kpiece = gc.getPiece(kpid as PID),
-               kattckrs = kpiece ? kpiece.getAttckrs() : [];
-          if (kpiece === null) {
-               console.log('wtf');
+          if (lastMove === GAME_RESULT[lastMove]) {
+               return;
+          } else if (this.state.sqidsToPids !== prevState.sqidsToPids) {
+               control.updateData();
           }
+
           if (this.props.test) {
                window.setTimeout(this.runtest, 10, this.props.test);
-          } else if (kattckrs.length && (this.state.checking.length === 0)) {
-               const
-                    checkers: SQID[] = [];
-
-               kattckrs.forEach(pid => {
-                    const p = gc.getPiece(pid);
-                    p && checkers.push(p.getSqid());
-               });
-
-               moves[moves.length - 1] += (gc.isCheckMate(kpiece as King)) ? '#' : '+';
-               window.setTimeout(() => {
-                    this.setState({
-                         moves: moves,
-                         checking: checkers
-                    })
-               });
           } else {
-               if (this.nextMove && !(IS_PID.test(this.nextMove))) {
+               if (this.nextMove && !(IS_PID.test(this.nextMove)) && !(IS_PHASE_ONE_PROMO.test(this.nextMove))) {
                     // ie if not selection of piece to move
                     console.log(`Moves: ${moves}`);
                }
-               const nextPlayer = (Game.nextTurn === 'W') ? this.players[0] : this.players[1];
+
                if (nextPlayer === 'computer') {
-                    const lastMove = (moves.length) ? moves[moves.length - 1] : null;
                     window.setTimeout(this.computedMove.compute, 250, lastMove);
                }
           }
      }
+     // componentDidUpdate(prevProps: IGame, prevState: IGamePosition) {
+     //      const control = Game.control;
+     //
+     //      if (this.state.sqidsToPids !== prevState.sqidsToPids) {
+     //           control.updateData();
+     //      }
+     //
+     //      const
+     //           currentPlayer = control.getCurrentPlayer(),
+     //           moves = this.state.moves;
+     //
+     //      if (this.props.test) {
+     //           window.setTimeout(this.runtest, 10, this.props.test);
+     //      } else {
+     //           if (this.nextMove && !(IS_PID.test(this.nextMove)) && !(IS_PHASE_ONE_PROMO.test(this.nextMove))) {
+     //                // ie if not selection of piece to move
+     //                console.log(`Moves: ${moves}`);
+     //           }
+     //
+     //           const nextPlayer = (currentPlayer === 'W') ? this.players[0] : this.players[1];
+     //           if (nextPlayer === 'computer') {
+     //                const lastMove = (moves.length) ? moves[moves.length - 1] : null;
+     //                window.setTimeout(this.computedMove.compute, 250, lastMove);
+     //           }
+     //      }
+     // }
      render() {
           const
-               orientation = this.orientation,  //this.state.orientation,
+               orientation = this.orientation,
                whiteCaptures = this.state.whiteCaptures,
                blackCaptures = this.state.blackCaptures,
                promotion = Game.control.getPromotion(),
@@ -461,11 +488,9 @@ export class Game extends React.Component<IGame, IGamePosition> {
                          onFlipPause={this.handleFlipPause.bind(this)} />
                     <Captures pieces={topCaptures} />
                     <Board
-                         squaresToPieces={this.state.squaresToPieces}
+                         sqidsToPids={this.state.sqidsToPids}
                          orientation={this.orientation}
-                         turn={this.state.turn}
                          moves={this.state.moves}
-                         checking={this.state.checking}
                          selectedSquare={this.state.selectedSquare}
                          legals={this.squareHighlights ? this.state.legals : []}
                          attacking={this.squareHighlights ? this.state.attacking : []}
@@ -475,11 +500,9 @@ export class Game extends React.Component<IGame, IGamePosition> {
                          onSquareSelection={this.selectSquare.bind(this)} />
                     <Captures pieces={bottomCaptures} />
                     <Promotion
-                         side={(Game.nextTurn === 'W') ? 'B' : 'W'}
                          sqid={promotion}
                          onPromotionSelection={this.handlePromotion.bind(this)} />
                </div>
-
           );
      }
 }

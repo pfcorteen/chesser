@@ -1,100 +1,110 @@
 [
      {
-          "name":           "cvc",
+          "name":           "haltingProblem",
           "piecePositions": null,
-          "moves":          ["WKBPf4","BQNc6","WQPd4","BQNPb6","WQBPc4","BQNb4","WQa4",
-               "BQNc6","WQPd5","BQNa5","WQb4","BQBPc5","compute"],
+          "moves":          [
+               "WQBPc3","BKNPg5","WQb3","BQPd5","WQBPc4","BQPd4","WQf3","BKNPg4",
+               "WQf4","BKNh6","WQNPb3","BKNf5","WQxg4","BKBh6","WQh5","BKBf4",
+               "WQg4","BKBh6","WQh5","BKBf4","WQg4","BKBh6","WQh5","BKBf4","WQg4","BKBh6",
+               "compute"],
           "firstTurn":       "W",
-          "testPiece":      "WQP",
+          "testPiece":      "BK",
           "pieceData": {
-              "legals": ["c3", "d4", "e5", "f6", "g7", "c1", "a1", "a3"],
-              "accessors": ["b3", "c4", "c3", "d4", "e5", "f6", "d3", "c2", "d1", "c1", "b1", "a1", "a2", "a3"],
-              "potentials": ["c3", "d4", "e5", "f6", "g7", "c1", "a1", "a3"],
+              "legals": [],
+              "accessors": [],
+              "potentials": [],
               "attckrs": [],
-              "attckng": ["BK"],
+              "attckng": [],
               "dfndrs":  [],
               "dfndng":  []
           }
      },
      {
-          "name":           "hardestSingleMoveMate",
-          "piecePositions": {
-               "BQR":"a8", "BQ":"c8", "BKR":"d8", "BKB":"f8",
-               "WQR":"b7", "BKP":"e7", "BKBP":"f7", "BK":"g7", "BKRP":"h7",
-               "BQP":"d6","BKNP":"g6", "WKN":"h6",
-               "BQRP":"a5", "BQNP":"b5", "BKN":"c5", "WQP":"d5", "WQ":"g5",
-               "BQB":"a4", "BQN":"b4", "WKBP":"e4",
-               "WKP":"e3", "WQN":"g3", "WKRP":"h3",
-               "WQRP":"a2", "WQB":"b2", "WKB":"c2", "WKNP":"g2",
-               "WKR":"f1", "WK":"g1"
-          },
-          "moves":          ["BKPe5","compute"],
-          "firstTurn":       "W",
-          "testPiece":      "WQB",
+          "name":           "stalemate",
+          "piecePositions": { "BK":"a8", "WK":"c1", "WQ":"c7","WKN":"g5" },
+          "moves":          ["compute"],
+          "firstTurn":       "B",
+          "testPiece":      "BK",
           "pieceData": {
-              "legals": ["c3", "d4", "e5", "f6", "g7", "c1", "a1", "a3"],
-              "accessors": ["b3", "c4", "c3", "d4", "e5", "f6", "d3", "c2", "d1", "c1", "b1", "a1", "a2", "a3"],
-              "potentials": ["c3", "d4", "e5", "f6", "g7", "c1", "a1", "a3"],
+              "legals": [],
+              "accessors": ["b8", "c8", "d8", "e8", "f8", "g8", "h8", "b7", "c6",
+                   "d5", "e4", "f3", "g2", "h1", "b6", "a7", "a6", "a5", "a4", "a3", "a2", "a1"],
+              "potentials": ["b8", "b7", "a7"],
               "attckrs": [],
-              "attckng": ["BK"],
+              "attckng": [],
               "dfndrs":  [],
               "dfndng":  []
           }
      },
      {
-       "name":           "game",
-       "piecePositions": {
-            "BQR":"a8","BQB":"c8","BKB":"f8","BKR":"h8","BQRP":"a7","BQNP":"b7","WQ":"f7","BKNP":"g7",
-            "BQN":"c6","BK":"d6","BKN":"e6","BKRP":"h6","BQP":"d5","BKP":"e5","WKNP":"f5","BKBP":"h5",
-            "WQRP":"a4","BQBP":"c4","WQN":"b3","WQP":"c3","WKN":"e3","WKB":"f3","WQNP":"b2","WQBP":"c2",
-            "WKP":"e2","WKBP":"f2","WKR":"g2","WK":"b1","WQR":"d1","BQ":"h1"},
-       "moves":          ["compute"],
+       "name":           "tryCapture3",
+       "piecePositions": null,
+       "moves":          [
+         "WKRPh3","BQPd6","WQNa3","BQd7","WKNPg3","BQPd5","WKRPh4","BKPe5","WQNb5","BQxb5","WKBPf3","BQNa6","WQNPb4","BQNxb4",
+         "WKf2","BKBc5","WKPe3","BQRb8","WKBxb5","BQBPc6","WQPd4","BQBPxb5","WQPxc5","BQNa6","WQxd5","BKBPf5","WQxe5","BKNe7",
+         "WQxg7","BQNxc5","WQxh8","BKf7","WQxh7","BKf8","WQh8","BKNg8","WQh6","compute"],
        "firstTurn":       "W",
-       "testPiece":      "WKN",
+       "testPiece":      "BKN",
        "pieceData": {
-         "legals": ["d6", "e5", "e3", "d2", "a3", "a5", "b6"],
-         "accessors": ["c5", "d4", "e4", "f4", "g4", "h4", "e3", "d3", "e2", "d2", "c3",
-              "b2", "b3", "a3", "b4", "a4", "a5", "b5", "a6", "b6"],
-         "potentials": ["d6", "e5", "e3", "d2", "a3", "a5", "b6"],
-         "attckrs": ["BQP"],
-         "attckng": ["BK", "BKP"],
-         "dfndrs":  [],
-         "dfndng":  ["WQNP"]
-       }
-     },
-     {
-       "name":           "test5",
-       "piecePositions": {"BK":"e8","BQR":"a8","BQBP":"c7","BKN":"d6","WK":"e1","WQ":"b6"},
-       "moves":          ["O-O-O"],
-       "firstTurn":       "B",
-       "testPiece":      "BK",
-       "pieceData": {
-         "legals": ["d7"],
-         "accessors": ["d8", "e7", "d7", "e6", "f5", "g4", "h3", "d6", "c7", "b7", "a6", "a7", "b8", "a8"],
-         "potentials": ["d7","b7","b8"],
+         "legals": ["g4", "f7", "g8"],
+         "accessors": ["h7", "h8", "h5", "g4", "g5", "f4", "f5", "g6", "f6", "e6", "d6", "c6", "b6", "a6", "f7", "g7", "f8", "g8"],
+         "potentials": ["g4", "f7", "g8"],
          "attckrs": [],
          "attckng": [],
-         "dfndrs":  ["BQR","BKN"],
-         "dfndng":  ["BQR","BQBP"]
+         "dfndrs":  [],
+         "dfndng":  ["BKBP"]
        }
      },
      {
-       "name":           "DoubleDiscoveredCheck",
-       "piecePositions": {"WK":"e1","BK":"a6","WQRP":"a5","BQRP":"a7","BQNP":"b7","WQR":"a1",
-            "WKB":"g2","WQB":"g1","WKN":"d8"},
-       "moves":          ["WKBf1","BQNPb5","compute"],
+       "name":           "test1",
+       "piecePositions": {"WK":"g5","BK":"e7","WQ":"h7","WKP":"f7","BKN":"g8","BKP":"e6","BQP":"d6"},
+       "moves":          ["WKPxg8=W1R"],
        "firstTurn":       "W",
        "testPiece":      "BK",
        "pieceData": {
          "legals": [],
-         "accessors": [
-           "a7", "b8", "b7", "c8", "c7", "c5", "b5", "c4", "d3", "e2", "b4", "a5", "a4", "a3", "a2"
-         ],
-         "potentials": ["b7", "b6", "b5", "a5"],
-         "attckrs": ["WQR","WKB"],
-         "attckng": ["WQRP"],
+         "accessors": ["e8", "f8", "f7", "g7", "g6", "f6", "f5", "e6", "d5", "d6", "c6", "d7", "c7", "b7", "a7", "c8", "d8"],
+         "potentials": ["e8", "f8", "f7", "f6", "d7", "d8"],
+         "attckrs": ["WQ"],
+         "attckng": [],
          "dfndrs":  [],
-         "dfndng":  ["BQRP"]
+         "dfndng":  ["BKP", "BQP"]
+       }
+     },
+     {
+       "name":           "tryCapture4",
+       "piecePositions": null,
+       "moves":          ["WQRPa3","BKNPg5","WQNPb3","BKPe6","WQBPc3","BKNh6","WKRPh4","compute"],
+       "firstTurn":       "W",
+       "testPiece":      "BKNP",
+       "pieceData": {
+         "legals": ["h3"],
+         "accessors": [
+           "h5", "h6", "h3", "h2", "g3", "f3", "g4", "f4", "e4", "d4",
+           "c4", "b4", "a4", "f5", "g5", "f6", "e7", "d8", "g6"
+         ],
+         "potentials": ["h3", "g3"],
+         "attckrs": ["WKR"],
+         "attckng": [],
+         "dfndrs":  ["BQ"],
+         "dfndng":  []
+       }
+     },
+     {
+       "name":           "pawnMate",
+       "piecePositions": {"WK":"e1","BK":"e8","WKP":"d6","WKN":"b8","WKR":"f1","WQB":"h4"},
+       "moves":          ["compute"],
+       "firstTurn":       "W",
+       "testPiece":      "WKP",
+       "pieceData": {
+         "legals": ["d8","e8"],
+         "accessors": ["d8", "f8", "e7", "f7", "g7", "h7", "f6", "e6", "f5", "g4", "h3", "e5", "d6",
+           "d5", "d4", "d3", "d2", "d1", "c5", "c6", "b5", "a4", "b6", "c7", "b7", "a7", "b8", "c8"],
+         "potentials": ["d8","e8","c8"],
+         "attckrs": ["BK"],
+         "attckng": ["BK"],
+         "dfndrs":  ["WKN"],
+         "dfndng":  []
        }
      },
      {
@@ -117,21 +127,81 @@
        }
      },
      {
-       "name":           "pawnMate",
-       "piecePositions": {"WK":"e1","BK":"e8","WKP":"d6","WKN":"b8","WKR":"f1","WQB":"h4"},
-       "moves":          ["compute"],
-       "firstTurn":       "W",
-       "testPiece":      "WKP",
+       "name":           "test5",
+       "piecePositions": {"BK":"e8","BQR":"a8","BQBP":"c7","BKN":"d6","WK":"e1","WQ":"b6"},
+       "moves":          ["O-O-O"],
+       "firstTurn":       "B",
+       "testPiece":      "BK",
        "pieceData": {
-         "legals": ["d8","e8"],
-         "accessors": ["d8", "f8", "e7", "f7", "g7", "h7", "f6", "e6", "f5", "g4", "h3", "e5", "d6",
-           "d5", "d4", "d3", "d2", "d1", "c5", "c6", "b5", "a4", "b6", "c7", "b7", "a7", "b8", "c8"],
-         "potentials": ["d8","e8","c8"],
-         "attckrs": ["BK"],
-         "attckng": ["BK"],
-         "dfndrs":  ["WKN"],
-         "dfndng":  []
+         "legals": ["d7"],
+         "accessors": ["d8", "e7", "d7", "e6", "f5", "g4", "h3", "d6", "c7", "b7", "a6", "a7", "b8", "a8"],
+         "potentials": ["d7","b7","b8"],
+         "attckrs": [],
+         "attckng": [],
+         "dfndrs":  ["BQR","BKN"],
+         "dfndng":  ["BQR","BQBP"]
        }
+     },
+     {
+          "name":           "hardestSingleMoveMate",
+          "piecePositions": {
+               "BQR":"a8", "BQ":"c8", "BKR":"d8", "BKB":"f8",
+               "WQR":"b7", "BKP":"e7", "BKBP":"f7", "BK":"g7", "BKRP":"h7",
+               "BQP":"d6","BKNP":"g6", "WKN":"h6",
+               "BQRP":"a5", "BQNP":"b5", "BKN":"c5", "WQP":"d5", "WQ":"g5",
+               "BQB":"a4", "BQN":"b4", "WKBP":"e4",
+               "WKP":"e3", "WQN":"g3", "WKRP":"h3",
+               "WQRP":"a2", "WKB":"c2", "WKNP":"g2",
+               "WQB":"c1", "WKR":"f1", "WK":"g1"
+          },
+          "moves":          ["WQBb2","BKPe5","compute"],
+          "firstTurn":       "W",
+          "testPiece":      "WQB",
+          "pieceData": {
+              "legals": ["c3", "d4", "e5", "f6", "g7", "c1", "a1", "a3"],
+              "accessors": ["b3", "c4", "c3", "d4", "e5", "f6", "d3", "c2", "d1", "c1", "b1", "a1", "a2", "a3"],
+              "potentials": ["c3", "d4", "e5", "f6", "g7", "c1", "a1", "a3"],
+              "attckrs": [],
+              "attckng": ["BK"],
+              "dfndrs":  [],
+              "dfndng":  []
+          }
+     },
+     {
+       "name":           "DoubleDiscoveredCheck",
+       "piecePositions": {"WK":"e1","BK":"a6","WQRP":"a5","BQRP":"a7","BQNP":"b7","WQR":"a1",
+            "WKB":"g2","WQB":"g1","WKN":"d8"},
+       "moves":          ["WKBf1","BQNPb5","compute"],
+       "firstTurn":       "W",
+       "testPiece":      "BK",
+       "pieceData": {
+         "legals": [],
+         "accessors": [
+           "a7", "b8", "b7", "c8", "c7", "c5", "b5", "c4", "d3", "e2", "b4", "a5", "a4", "a3", "a2"
+         ],
+         "potentials": ["b7", "b6", "b5", "a5"],
+         "attckrs": ["WQR","WKB"],
+         "attckng": ["WQRP"],
+         "dfndrs":  [],
+         "dfndng":  ["BQRP"]
+       }
+     },
+     {
+          "name":           "WQh5#",
+          "piecePositions": null,
+          "moves":          ["WKPe4","BKBPf5","WKPxf5","BKNPg5","WKPg6ep","BKNh6","WKPxh7","BKRg8",
+               "WKPxg8=W1Q","BKNxg8","compute"],
+          "firstTurn":       "W",
+          "testPiece":      "BK",
+          "pieceData": {
+              "legals": [],
+              "accessors": ["f8", "g7", "f7", "g6", "f6", "e7", "d6", "d7", "c7", "d8"],
+              "potentials": ["f7"],
+              "attckrs": ["WQ"],
+              "attckng": [],
+              "dfndrs":  ["BQ"],
+              "dfndng":  ["BQ","BKB","BQP","BKP"]
+          }
      },
      {
        "name":           "deliverCheck1",
@@ -198,7 +268,7 @@
        "name":           "escapeCheck2",
        "piecePositions": null,
        "moves":          ["WQNa3","BKNf6","WQNPb3","BKPe5","WKBPf4","BQNc6","WKBPxe5",
-         "BQNxe5","WKNPg3","BQNg4","WKRPh3","BQNe5","WKNf3","BQNxf3+","compute"],
+         "BQNxe5","WKNPg3","BQNg4","WKRPh3","BQNe5","WKNf3","BQNxf3","compute"],
        "firstTurn":       "W",
        "testPiece":      "WKP",
        "pieceData": {
@@ -216,7 +286,7 @@
   {
     "name":           "test2",
     "piecePositions": { "BK":"g5","WK":"e1","WKR":"d5","WKP":"e5","BKB":"e7","BKBP":"f7","BKNP":"g6" },
-    "moves":          ["BKBPf5","WKPf6ep+"],
+    "moves":          ["BKBPf5","WKPf6ep"],
     "firstTurn":       "B",
     "testPiece":      "BK",
     "pieceData": {
@@ -290,25 +360,6 @@
     }
   },
   {
-    "name":           "tryCapture4",
-    "piecePositions": null,
-    "moves":          ["WQRPa3","BKNPg5","WQNPb3","BKPe6","WQBPc3","BKNh6","WKRPh4","compute"],
-    "firstTurn":       "B",
-    "testPiece":      "BKNP",
-    "pieceData": {
-      "legals": ["h3"],
-      "accessors": [
-        "h5", "h6", "h3", "h2", "g3", "f3", "g4", "f4", "e4", "d4",
-        "c4", "b4", "a4", "f5", "g5", "f6", "e7", "d8", "g6"
-      ],
-      "potentials": ["h3", "g3"],
-      "attckrs": ["WKR"],
-      "attckng": [],
-      "dfndrs":  ["BQ"],
-      "dfndng":  []
-    }
-  },
-  {
     "name":           "tryCapture2",
     "piecePositions": null,
     "moves":          ["WKPe4","BKRPh5","WQBPc3","BQNPb5","compute"],
@@ -328,7 +379,7 @@
   {
     "name":           "tryCapture1",
     "piecePositions": null,
-    "moves":          ["WKNf3","BQPd6","WQBPc4","BKPe5","WQa4+","BKe7","WKPe4","BQNa6","WQd1","BQPd5","compute"],
+    "moves":          ["WKNf3","BQPd6","WQBPc4","BKPe5","WQa4","BKe7","WKPe4","BQNa6","WQd1","BQPd5","compute"],
     "firstTurn":       "W",
     "testPiece":      "WKN",
     "pieceData": {
@@ -341,41 +392,6 @@
       "attckng": ["BKP"],
       "dfndrs":  ["WKNP", "WQ"],
       "dfndng":  ["WKRP", "WK", "WQP"]
-    }
-  },
-  {
-    "name":           "tryCapture3",
-    "piecePositions": null,
-    "moves":          [
-      "WKRPh3","BQPd6","WQNa3","BQd7","WKNPg3","BQPd5","WKRPh4","BKPe5","WQNb5","BQxb5","WKBPf3","BQNa6","WQNPb4","BQNxb4",
-      "WKf2","BKBc5+","WKPe3","BQRb8","WKBxb5+","BQBPc6","WQPd4","BQBPxb5","WQPxc5","BQNa6","WQxd5","BKBPf5","WQxe5+","BKNe7",
-      "WQxg7","BQNxc5","WQxh8+","BKf7","WQxh7+","BKf8","WQh8+","BKNg8","WQh6+","compute"],
-    "firstTurn":       "B",
-    "testPiece":      "BKN",
-    "pieceData": {
-      "legals": ["g4", "f7", "g8"],
-      "accessors": ["h7", "h8", "h5", "g4", "g5", "f4", "f5", "g6", "f6", "e6", "d6", "c6", "b6", "a6", "f7", "g7", "f8", "g8"],
-      "potentials": ["g4", "f7", "g8"],
-      "attckrs": [],
-      "attckng": [],
-      "dfndrs":  [],
-      "dfndng":  ["BKBP"]
-    }
-  },
-  {
-    "name":           "test1",
-    "piecePositions": {"WK":"g5","BK":"e7","WQ":"h7","WKP":"f7","BKN":"g8","BKP":"e6","BQP":"d6"},
-    "moves":          ["WKPxg8=W1R#"],
-    "firstTurn":       "W",
-    "testPiece":      "BK",
-    "pieceData": {
-      "legals": [],
-      "accessors": ["e8", "f8", "f7", "g7", "g6", "f6", "f5", "e6", "d5", "d6", "c6", "d7", "c7", "b7", "a7", "c8", "d8"],
-      "potentials": ["e8", "f8", "f7", "f6", "d7", "d8"],
-      "attckrs": ["WQ"],
-      "attckng": [],
-      "dfndrs":  [],
-      "dfndng":  ["BKP", "BQP"]
     }
   },
   {
@@ -496,7 +512,7 @@
   {
     "name":           "test11",
     "piecePositions": null,
-    "moves":          ["WKBPf3","BKPe6","WQNc3","BQh4+"],
+    "moves":          ["WKBPf3","BKPe6","WQNc3","BQh4"],
     "firstTurn":       "W",
     "testPiece":      "WKRP",
     "pieceData": {
@@ -508,21 +524,21 @@
       "dfndrs":  ["WKR"],
       "dfndng":  []
     }
-  },
-  {
-    "name":           "thornPawn",
-    "piecePositions": {"WK":"e1","BK":"e8","WKP":"e6","BKP":"e7","WKR":"h1"},
-    "moves":          ["compute"],
-    "firstTurn":       "W",
-    "testPiece":      "BK",
-    "pieceData": {
-      "legals": [],
-      "accessors": ["f8", "g8", "g7", "f7", "g6", "h5", "f6", "e7", "d6", "d7", "c6", "b5", "a4", "c7", "d8", "c8", "b8", "a8"],
-      "potentials": ["f8","f7","d7","d8"],
-      "attckrs": ["WKR"],
-      "attckng": [],
-      "dfndrs":  [],
-      "dfndng":  ["BKP"]
-    }
-  }
+     },
+     {
+      "name":           "thornPawn",
+      "piecePositions": {"WK":"e1","BK":"e8","WKP":"e6","BKP":"e7","WKR":"h1"},
+      "moves":          ["compute"],
+      "firstTurn":       "W",
+      "testPiece":      "BK",
+      "pieceData": {
+         "legals": [],
+         "accessors": ["f8", "g8", "g7", "f7", "g6", "h5", "f6", "e7", "d6", "d7", "c6", "b5", "a4", "c7", "d8", "c8", "b8", "a8"],
+         "potentials": ["f8","f7","d7","d8"],
+         "attckrs": ["WKR"],
+         "attckng": [],
+         "dfndrs":  [],
+         "dfndng":  ["BKP"]
+      }
+     },
 ]

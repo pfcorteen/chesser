@@ -27,11 +27,11 @@ export class ConfigurationControls extends React.PureComponent<IConfigControl, {
         <button className={"config"} onClick={this.handleFlipPause.bind(this)}>Pause/Continue</button>
         <select className={"config"} name="players" onChange={this.handlePlayerChange.bind(this)}>
           <option key={0} value={"New Game"}>New Game</option>,
-          <option key={1} value={"human v human"}>human v human</option>,
+          <option key={1} value={"human v human"}>uman v human</option>,
           <option key={2} value={"human v computer"}>human v computer</option>,
           <option key={3} value={"computer v human"}>computer v human</option>,
           <option key={4} value={"computer v computer"}>computer v computer</option>
-          <option key={5} value={"test"}>test</option>
+          <option key={5} value={"Run Tests"}>Run Tests</option>
         </select>
       </div>
     );

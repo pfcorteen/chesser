@@ -11,6 +11,7 @@ export const IS_ROOK: RegExp = /.*R$/;
 export const IS_BISHOP: RegExp = /.*B$/;
 export const IS_KNIGHT: RegExp = /.*N$/;
 export const IS_PAWN: RegExp = /.*P$/;
+export const IS_PHASE_ONE_PROMO: RegExp = /.*=$/;
 
 export const FILES = 'abcdefgh';
 export const RANKS = '12345678';
@@ -49,25 +50,20 @@ export const PIECE_ICONS = {
 export interface IPiecePids {
      pieces: PID[];
 }
-
 export interface IPosition {
-     squaresToPieces: { [key in SQID]: PID | null; };
-}
-export interface IMoves {
      moves: string[];
+     sqidsToPids: { [key in SQID]: PID | null; };
 }
-export interface IMove extends IMoves {
-     turn: SIDE;
+export interface IMoveEffect {
      selectedSquare: SQID | null;
      legals: SQID[];
      attacking: SQID[];
      attacked: SQID[];
      defending: SQID[];
      defended: SQID[];
-     checking: SQID[];  // [SQID, SQID] should be typed??
 }
 
-export interface IBoard extends IPosition, IMove {
+export interface IBoard extends IPosition, IMoveEffect {
      orientation: SIDE;
      onSquareSelection: (sqid: SQID) => void;
 }
@@ -81,19 +77,20 @@ export interface IPieceData {
      dfndng: [PID];
      dfndrs: [PID];
 }
-export interface ITest extends IMoves {
+export interface ITest extends IMoveEffect {
      name: string,
      firstTurn: SIDE,
      testPiece: PID,
      piecePositions: { [key in PID]: SQID; },
+     moves: string[],
      pieceData: IPieceData
 }
 export interface IGame {
      test: ITest | null;
      onTestCompleted: () => void;
-     onRunTests: (boolean) => void;
+     onRunTests: (run: boolean) => void;
 }
-export interface IGamePosition extends IPosition, IMove {
+export interface IGamePosition extends IPosition, IMoveEffect {
      whiteCaptures: PID[];
      blackCaptures: PID[];
      promotion: SQID;
@@ -152,7 +149,6 @@ export const DIRECTION_GROUPS: DIRECTION_GROUP[] = [
 //      [DIRECTION.SSE, DIRECTION.NNW]
 // ]
 export interface IPromotion {
-     side: SIDE;
      sqid: SQID;
      onPromotionSelection: (p: string) => void;
 }
@@ -163,11 +159,11 @@ export interface IDeconMove {
      capture: boolean,
      promoPhaseOne: boolean,
      promo: SQID,
-     ipid: PID,
-     ipiece: Piece,
-     ifrom: SQID,
-     ito: SQID,
-     idrctn: DIRECTION,
+     mpid: PID,
+     mpiece: Piece,
+     mfrom: SQID,
+     mto: SQID,
+     mdrctn: DIRECTION,
      rpid: PID,
      rpiece: Piece,
      rfrom: SQID,
@@ -183,7 +179,7 @@ export interface IConfigControl {
      onFlipPause: () => void;
 }
 
-export type GAME_RESULT = '1-0' | '0-1' | '1/2-1/2';
+export enum GAME_RESULT { '1-0', '0-1', '1/2-1/2' };
 
 export interface IGeneratedMove {
      pid: PID;
@@ -198,9 +194,9 @@ export interface IScoredMove extends IGeneratedMove {
 }
 export const BasicPieceRank = {
      'K': 1000,
-     'Q': 9,
-     'R': 5,
-     'B': 4,
-     'N': 3,
-     'P': 1
+     'Q': 18,
+     'R': 10,
+     'B': 8,
+     'N': 6,
+     'P': 2
 };

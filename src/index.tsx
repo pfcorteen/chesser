@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { Game } from "./components/Game";
-import { ITest, IScoredMove, BasicPieceRank } from "./components/Model";
+import { ITest } from "./components/Model";
 import * as jsontests from "./tests.json";
 
 let redraw = () => {
@@ -15,14 +15,29 @@ let redraw = () => {
 		captureSquareDim = dim / 23,
 		promoSquareDim = dim / 9,
 		styles =
-			`.board{ font: ${squareDim}px Arial Unicode MS, sans-serif;
-							 width: ${boardSide}px; height: ${boardSide}px}
-			 .board_square { width: ${squareDim}px; height: ${squareDim}px}
-			 #captures, #configControls {font: ${captureSquareDim}px Arial Unicode MS, sans-serif;
-							    width: ${boardSide}px; height: ${squareSide}px}
-			 .config {font: ${captureSquareDim / 3}px Arial Unicode MS, sans-serif; }
-			 .promotion{ font: ${promoSquareDim}px Arial Unicode MS, sans-serif; }
-			 .promo_square { width: ${promoSquareDim}px; height: ${promoSquareDim}px}`,
+			`.board {
+				font: ${squareDim}px Arial Unicode MS, sans-serif;
+				width: ${boardSide}px;
+				height: ${boardSide}px
+			}
+			.board_square {
+				width: ${squareDim}px;
+				height: ${squareDim}px
+			}
+			#captures, #configControls {
+				font: ${captureSquareDim}px Arial Unicode MS, sans-serif;
+				width: ${boardSide}px;
+				height: ${squareSide}px
+			}
+			.config {
+				font: ${captureSquareDim / 3}px Arial Unicode MS, sans-serif;
+			}
+			.promotion{
+				font: ${promoSquareDim}px Arial Unicode MS, sans-serif;
+			}
+			.promo_square {
+				width: ${promoSquareDim}px; height: ${promoSquareDim}px
+			}`,
 		stylEl = document.createElement('style');
 
 	stylEl.setAttribute('type', 'text/css');

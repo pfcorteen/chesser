@@ -1,5 +1,6 @@
 import * as React from "react";
 import {IPromotion, PIECE_ICONS} from "./Model";
+import {Game} from "./Game";
 
 export class Promotion extends React.Component<IPromotion, {}> {
 	static getNextPromotionNumber = (): number => {
@@ -16,11 +17,14 @@ export class Promotion extends React.Component<IPromotion, {}> {
 	};
 
 	render() {
-		const s = this.props.side,
-			queen = (s === 'W') ? 'WQ' : 'BQ',
-			rook = (s === 'W') ? 'WR' : 'BR',
-			bishop = (s === 'W') ? 'WB' : 'BB',
-			knight = (s === 'W') ? 'WN' : 'BN',
+		const
+			control = Game.control,
+			// side = Game.nextTurn,
+			currentPlayer = control.getCurrentPlayer(),
+			queen = (currentPlayer === 'W') ? 'WQ' : 'BQ',
+			rook = (currentPlayer === 'W') ? 'WR' : 'BR',
+			bishop = (currentPlayer === 'W') ? 'WB' : 'BB',
+			knight = (currentPlayer === 'W') ? 'WN' : 'BN',
 			handleClick = this.handleClick.bind(this);
 
 		return (

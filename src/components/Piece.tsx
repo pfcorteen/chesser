@@ -1,12 +1,12 @@
 import { Board } from "./Board";
 import { Game } from "./Game";
 import { GameControl } from "./GameControl";
-import { SIDE, SQID, PID, FILES, DIRECTION, ALL_DIRECTIONS, HALF_WINDS, CARDINALS, IPieceData, IS_PAWN } from "./Model";
+import { SIDE, SQID, PID, FILES, DIRECTION, ALL_DIRECTIONS, HALF_WINDS, IPieceData, IS_PAWN } from "./Model";
 
 export abstract class Piece {
      protected sqid: SQID | null;
      protected pid: PID;
-     protected kpin: PID = null; // the pid of the piece pinning this piece against its ownking?
+     protected kpin: PID = null; // the pid of the piece pinning this piece against its own king?
      protected kshadow: PID = null; // the pid of the piece that can be discovered to check the opponent king?
      protected step = false; // King, Pawn and Knight are default one step per move
 
@@ -22,29 +22,10 @@ export abstract class Piece {
 
      protected abstract findLegalPositions(): void; // NNB: effect of pins on legal squares is dealt with in King.markPins()
 
-     // protected findLegalPositions() {
-     //      const
-     //           control = Game.control,
-     //           pnnngPiece = control.getPiece(this.kpin),
-     //           pnnngSqid = pnnngPiece ? pnnngPiece.sqid : null,
-     //           oppSide = this.getSide() === 'W' ? 'B' : 'W',
-     //           ksqid = control.getPiece(oppSide + 'K'). getSqid();
-     //
-     //      for (const sqid of this.potentials) {
-     //           if (pnnngSqid) {
-     //                if (!Board.intercepts(sqid, pnnngSqid, ksqid)) {
-     //                     continue;
-     //                }
-     //           }
-     //           this.legals.push(sqid);
-     //      }
-     // }
-
      constructor(sqid: SQID, pid: PID) {
           this.sqid = sqid;
           this.pid = pid;
      }
-
 
      public getPid = (): PID => { return this.pid; }
      public setSqid = (sqid: SQID): void => { this.sqid = sqid; }
@@ -127,19 +108,6 @@ export abstract class Piece {
      public getDfndng = (): PID[] => { return this.dfndng; }
      public getDfndrs = (): PID[] => { return this.dfndrs.filter(a => { return a ? true : false; }); }
 
-     // moveTowards is now in Board as a static
-     // public moveTowards = (to: SQID): SQID[] => {
-     //      let route: SQID[] = [];
-	// 	this.legals.forEach(lgl => {
-	// 		const drctn = Board.getDirection(lgl, to);
-	// 		if (drctn && this.directions.includes(drctn)) {
-     //                if (to === Board.nextSquare(drctn, lgl)) {
-     //                     route.push(lgl);
-     //                }
-	// 		}
-	// 	})
-	// 	return route;
-     // }
      public alignedWith = (sqid: SQID): boolean => {
           const drctn = Board.getDirection(this.sqid, sqid);
           return this.directions.includes(drctn);
@@ -185,7 +153,6 @@ export abstract class Piece {
           return ptntls;
      }
      public updatePositionalData = (): void => {
-          /** console.log(`doing updatePositionalData for ${this.pid} at ${this.sqid}`); */
           const
                gc = Game.control,
                squares = gc.getSquares(),
@@ -262,6 +229,33 @@ export abstract class Piece {
           this.legals = this.getLegalPositions();
      }
      public confirmPieceData = (pieceData: IPieceData): boolean => {
+          // const comparisons = [
+          //      [pieceData.legals, this.legals],
+          //      [pieceData.accessors, this.accessors],
+          //      [pieceData.potentials, this.potentials],
+          //      [pieceData.attckng, this.attckng],
+          //      [pieceData.attckrs, this.attckrs],
+          //      [pieceData.dfndng, this.dfndng],
+          //      [pieceData.dfndrs, this.dfndrs]
+          // ] as  [SQID[], SQID[]][];
+          //
+          //
+          // for (const [pVector, tVector] of comparisons) {
+          //      if (pVector.length === tVector.length) {
+          //           return false;
+          //      }
+          //
+          //      for (let idx = 0; idx < pVector.length; idx += 1) {
+          //           const pid = pVector[idx];
+          //           if ( !tVector.includes(pid) ) {
+          //                return false;
+          //           }
+          //      }
+          //
+          //      return true;
+          // }
+
+
           const
                tlegals = pieceData.legals,
                taccessors = pieceData.accessors,
