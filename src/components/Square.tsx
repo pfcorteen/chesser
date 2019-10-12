@@ -26,8 +26,8 @@ export class Square extends React.Component<ISquare, {}> {
 		  defended = this.props.defended ? ' defended' : '',
 	    className='board_square',
 		  squareColour = className + ((r % 2)
-																  ? (f % 2) ? '-dark' : '-light'
-																  : (f % 2) ? '-light' : '-dark'),
+				  ? (f % 2) ? '-dark' : '-light'
+				  : (f % 2) ? '-light' : '-dark'),
 		  p = (pid) ? pid[0] + pid[pid.length - 1] : null,
 	    jsx: JSX.Element = (pid) ? <span className={ 'board_piece' }>{ PIECE_ICONS[p] }</span> : null;
 

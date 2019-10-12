@@ -1,6 +1,7 @@
 import { IPosition, IDeconMove, DIRECTION, DIRECTION_GROUP, ALL_DIRECTIONS, HALF_WINDS, CARDINALS, ORDINALS } from "./Model";
-import { FILES, PID, SIDE, SQID, PID_TO, PID_FROM_TO, SQUARE, ALGB_MOVE, IS_PID, IS_KING, IS_QUEEN, IS_ROOK, IS_BISHOP, IS_KNIGHT, IS_PAWN, BasicPieceRank } from './Model';
-// import { Game } from "./Game";
+import { FILES, PID, SIDE, SQID, PID_TO, PID_FROM_TO, SQUARE } from './Model';
+import { ALGB_MOVE, IS_PHASE_ONE_PROMO, IS_PID, BasicPieceRank } from './Model';
+import { IS_KING, IS_QUEEN, IS_ROOK, IS_BISHOP, IS_KNIGHT, IS_PAWN } from './Model';
 import { Board } from "./Board";
 import { Knight } from "./Knight";
 import { Pawn } from "./Pawn";
@@ -468,7 +469,7 @@ export class GameControl {
                }
           }
 
-          if (isMate) { console.log('mate detected'); }
+          // if (isMate) { console.log('mate detected'); }
           return isMate;
      }
      pieceTakers = (tkblPid: PID): PID[] => {
@@ -514,11 +515,8 @@ export class GameControl {
                          } else if (pid === mpid) {
                               continue; // skip this piece and continue this drctn to find discovered exchangers
                          } else if (IS_PAWN.test(pid)) {
-                              const pdrctn: DIRECTION = Board.getDirection(sq, sqid);
-                              // if (ORDINALS.includes(pdrctn) && piece.directions.includes(pdrctn) && sqid === Board.nextSquare(pdrctn, sq) && !piece.isPinned(sqid)) {
-                              //      // pawn can only exchange on diagonal one square forward
-                              //      (pid[0] === 'W') ? whitePids.push(pid) : blackPids.push(pid);
-                              // }
+                              const
+                                   pdrctn: DIRECTION = Board.getDirection(sq, sqid);
                               if (ORDINALS.includes(pdrctn) && piece.directions.includes(pdrctn) && sqid === Board.nextSquare(pdrctn, sq)) {
                                    // pawn can only exchange on diagonal one square forward
                                    if (piece.isPinned(sqid) && piece.getKPin() !== mpid) {
@@ -582,18 +580,20 @@ export class GameControl {
                     rpid, rpiece, rfrom, rto
                } = this.deconstructMove(move),
                postMoveProcessing = (): void => {
+                    // this func currently not moved
                     const
-                         shadowing = mpiece.getKShadow(),
-                         oppkpid = (this.currentPlayer === 'W') ? 'BK' : 'WK',
+                         currentPlayer = this.currentPlayer,
+                         oppkpid = (currentPlayer === 'W') ? 'BK' : 'WK',
                          oppking = this.getPiece(oppkpid),
                          oppksqid = oppking.getSqid(),
-                         pmdrctn = Board.getDirection(mto, oppksqid);
+                         checkedBy: Piece[] = this.checkedBy(oppksqid, currentPlayer);
 
-                    // if (Board.alignedWith(mto, pmdrctn) === oppking || shadowing) {
-                    if ((mpiece.directions.includes(pmdrctn) && Board.alignedWith(mto, pmdrctn) === oppking) || shadowing) {
-                         move += (this.isCheckMatePreMove(oppking as King, [mpid, mfrom, mto])) ? '#' : '+';
+                    if (checkedBy.length) {
+                         const mate = this.isCheckMatePostMove(oppking as King);
+                         move += (this.isCheckMatePostMove(oppking as King)) ? '#' : '+';
                     }
                };
+
 
           if (mfrom === mto) {
                // must be promotion phase 2
@@ -617,13 +617,14 @@ export class GameControl {
                }
           }
 
-          if (!(/.*=$/.test(move))) {
-               postMoveProcessing();
+          if (!(IS_PHASE_ONE_PROMO.test(move))) { // not a 2 phase move
+               // this.updateData();
+               // postMoveProcessing();
                this.currentPlayer = (this.currentPlayer === 'W') ? 'B' : 'W';
           }
 
           const prevMove = this.moves[this.moves.length - 1] || null;
-          if (/.*=$/.test(prevMove)) {
+          if (IS_PHASE_ONE_PROMO.test(prevMove)) {
                this.moves[this.moves.length - 1] = move;
           } else {
                this.moves.push(move);
@@ -677,13 +678,23 @@ export class GameControl {
           return arr;
      };
      public getPieceWorth = (pid: PID): number => {
-          const piecetype = pid[pid.length - 1];
-          let score: number = parseInt(BasicPieceRank[piecetype]);
-          const piece = this.getPiece(pid);
-          const sqid = piece ? piece.getSqid() : 0;
+          const
+               piecetype = pid[pid.length - 1],
+               piece = this.getPiece(pid),
+               sqid = piece ? piece.getSqid() : null,
+               rank = sqid ? parseInt(sqid[1]) : 0;
+
+          let
+               score: number = parseInt(BasicPieceRank[piecetype]);
+
           // some TODO here
-          score = IS_PAWN.test(pid) ? (sqid ? parseInt(sqid[1]) : 0) : score;
-          score += piece ? piece.getPotentials().length : 0;
+          // score = IS_PAWN.test(pid) ? (sqid ? parseInt(sqid[1]) : 0) : score;
+          score = IS_PAWN.test(pid)
+                    ? pid[0] === 'W'
+                         ? rank
+                         : 8 - rank
+                    : score;
+          score += piece ? piece.getLegals().length : 0;
           return score;
      };
      public setCurrentPlayer = (player: SIDE): void => {

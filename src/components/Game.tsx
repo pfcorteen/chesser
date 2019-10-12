@@ -20,7 +20,7 @@ export class Game extends React.Component<IGame, IGamePosition> {
      // public static nextTurn: SIDE = Game.firstTurn;
 
      public drawChecker = new DrawChecker();
-     public checked = false;
+     // public checked = false;
      private orientation: SIDE = 'W';
      private squareHighlights: boolean = true;
      private nextMove: string = null;
@@ -49,21 +49,6 @@ export class Game extends React.Component<IGame, IGamePosition> {
                     defended: []
                };
 
-          // if (props.test && (props.test.name !== ((state.test) ? state.test.name : null))) {
-          //      const piecePositions = props.test ? props.test.piecePositions : null;
-          //      Game.control = new GameControl(piecePositions);
-          //      Game.control.setCurrentPlayer(props.test ? props.test.firstTurn : Game.firstTurn);
-          //      newMove = emptyMove;
-          // } else if (state.sqidsToPids === null) {
-          //      Game.control = new GameControl(null);
-          //      Game.control.setCurrentPlayer(Game.firstTurn);
-          //      newMove = emptyMove;
-          // } else if (props.test === null) {
-          //      Game.control = new GameControl(null);
-          //      Game.control.setCurrentPlayer(Game.firstTurn);
-          // } else {
-          //      console.log('Game state what else?');
-          // }
           if (props.test && (props.test.name !== ((state.test) ? state.test.name : null))) {
                const piecePositions = props.test ? props.test.piecePositions : null;
                Game.control = new GameControl(piecePositions);
@@ -71,12 +56,10 @@ export class Game extends React.Component<IGame, IGamePosition> {
                newMove = emptyMove;
                Game.gameOn = false;
           } else if (!Game.gameOn && props.test === null) {
-                   Game.control = new GameControl(null);
-                   Game.control.setCurrentPlayer(Game.firstTurn);
-                   newMove = emptyMove;
-                   Game.gameOn = true;
-               // Game.control = new GameControl(null);
-               // Game.control.setCurrentPlayer(Game.firstTurn);
+               Game.control = new GameControl(null);
+               Game.control.setCurrentPlayer(Game.firstTurn);
+               newMove = emptyMove;
+               Game.gameOn = true;
           }
 
           Game.control.assemblePieceData();
@@ -122,6 +105,7 @@ export class Game extends React.Component<IGame, IGamePosition> {
      public selectSquare = (selected: SQID): void => {
           const
                control = Game.control,
+               currentPlayer = control.getCurrentPlayer(),
                selectedSquare = this.state.selectedSquare,
                moves = this.state.moves,
                pid = control.getPid(selected),
@@ -151,16 +135,19 @@ export class Game extends React.Component<IGame, IGamePosition> {
                attacked = this.state.attacked,
                position = { sqidsToPids: control.getSquares() } as IPosition;
 
-          if (this.paused || (lastMove && lastMove.endsWith('#'))) {
-               this.nextMove = (lastMove[0] === 'W') ? '1-0' : '0-1',
-               moves[moves.length] = this.nextMove;
-          } else if ((pid && IS_KING.test(pid) && pid[0] !== control.getCurrentPlayer())
-                         || this.drawChecker.isGameDrawn(moves)) {
-               // NNB: in case where a move is not possible then the opposite king is clicked by the computedMove
-               // can also easily adapt this to cater for resignatins also!! or No?
-               //possible draw
-               this.nextMove = '1/2-1/2';
-               moves[moves.length] = this.nextMove;
+
+          if (this.paused) {
+               return;
+          } else if ((pid && IS_KING.test(pid) && pid[0] !== currentPlayer)) {
+               // NNB: in case where a move is not possible then the opposite king is
+               // clicked by the computedMove to signify a draw
+               // possibly adapt this to cater for resignatins also!! or No?
+               const
+                    mkpid = (currentPlayer === 'W') ? 'WK' : 'BK',
+                    mking = control.getPiece(mkpid);
+               if (mking && mking.getLegals().length === 0) {
+                    moves.push('1/2-1/2');
+               }
           } else  if (legals.includes(selected)) {
                if (control.escapesCheck(selectedSquare, selected)) {
                     if (!control.selfCheck(selectedSquare, selected)) {
@@ -183,7 +170,6 @@ export class Game extends React.Component<IGame, IGamePosition> {
                               if (Math.abs(ff - tf) === 2) {
                                    // castling
                                    this.nextMove = (selected[0] === 'c') ? 'O-O-O' : 'O-O';
-                                   // position = control.processAlgebraicMove(this.nextMove);
                               }
                          } else if (mpiece instanceof Pawn) {
                               if ((selected[1] === '8' || selected[1] === '1')) {
@@ -202,8 +188,6 @@ export class Game extends React.Component<IGame, IGamePosition> {
                          }
 
                          position = control.processAlgebraicMove(this.nextMove);
-
-                         this.checked = false;
                     }
                }
 
@@ -212,12 +196,6 @@ export class Game extends React.Component<IGame, IGamePosition> {
                attacked = [] as SQID[];
                defending = [] as SQID[];
                defended = [] as SQID[];
-
-               // before nextMove is erazed check static function isDrawnGame: boolean
-               // if (this.drawChecker.isGameDrawn(moves)) {
-               //      this.nextMove += '=';
-               //      moves[moves.length - 1] = this.nextMove;
-               // }
           }
           else if (!selectedSquare) {
 
@@ -225,7 +203,7 @@ export class Game extends React.Component<IGame, IGamePosition> {
                this.nextMove = mpid;
 
                mpiece = control.getPiece(selected);
-               if (mpiece && (mpiece.getSide() === control.getCurrentPlayer())) {
+               if (mpiece && (mpiece.getSide() === currentPlayer)) {
                     legals = mpiece.getLegals();
                     attacking = pidsToSqids(mpiece.getAttckng());
                     attacked = pidsToSqids(mpiece.getAttckrs());
@@ -282,7 +260,7 @@ export class Game extends React.Component<IGame, IGamePosition> {
 
           this.nextMove += ppid;
           position = control.processAlgebraicMove(this.nextMove);
-          this.checked = false; // ensure fresh check via giveCheck is performed after promotion
+          // this.checked = false; // ensure fresh check via giveCheck is performed after promotion
 
           moves[moves.length - 1] = this.nextMove;
           setTimeout(() => {
@@ -303,9 +281,11 @@ export class Game extends React.Component<IGame, IGamePosition> {
           if (!this.paused) {
                if (ps === "Run Tests") {
                     console.log("Run Tests");
+                    Game.gameOn = false;
                     this.props.onRunTests(true);
                } else if (ps === "New Game") {
                     console.log("New Game");
+                    Game.gameOn = false;
                     this.props.onRunTests(false);
                } else {
                     const
@@ -373,7 +353,6 @@ export class Game extends React.Component<IGame, IGamePosition> {
                     checkTestResult();
                     this.props.onTestCompleted();
                     return;
-               // } else if (lastTestMove && lastTestMove.startsWith(lastStateMove)) {
                } else if (lastTestMove && /.*=$/.test(lastStateMove)) {
                     secondPhase = true;
                     move = lastTestMove;
@@ -419,21 +398,41 @@ export class Game extends React.Component<IGame, IGamePosition> {
                control = Game.control,
                currentPlayer = control.getCurrentPlayer(),
                nextPlayer = (currentPlayer === 'W') ? this.players[0] : this.players[1],
-               moves = this.state.moves,
-               nmoves = moves.length,
+               moves = this.state.moves;
+
+          let
                lastMove = (moves.length) ? moves[moves.length - 1] : null;
 
-
-          if (lastMove === GAME_RESULT[lastMove]) {
-               return;
-          } else if (this.state.sqidsToPids !== prevState.sqidsToPids) {
+          if (this.state.sqidsToPids !== prevState.sqidsToPids) {
+          // this condition means the board has changed so a move has been made
                control.updateData();
+               const
+                    oppkpid = currentPlayer + 'K',
+                    oppking = control.getPiece(oppkpid),
+                    checked = oppking.getAttckrs().length > 0;
+               if (checked) {
+                    const
+                         mate = control.isCheckMatePostMove(oppking as King),
+                         result = currentPlayer === 'W' ? '0-1' : '1-0';
+                    lastMove += (mate) ? '#' : '+';
+                    moves[moves.length - 1] = lastMove;
+                    mate && moves.push(result);
+                    this.setState({ moves: moves });
+                    return;
+               }
           }
 
           if (this.props.test) {
                window.setTimeout(this.runtest, 10, this.props.test);
           } else {
-               if (this.nextMove && !(IS_PID.test(this.nextMove)) && !(IS_PHASE_ONE_PROMO.test(this.nextMove))) {
+               if (lastMove === GAME_RESULT[GAME_RESULT[lastMove]]) {
+                    console.log(`Game over: ${moves}`);
+                    return;
+               } else if (this.drawChecker.isGameDrawn(moves)) {
+                    moves.push('1/2-1/2');
+                    this.setState({ moves: moves });
+                    return;
+               } else if (this.nextMove && !(IS_PID.test(this.nextMove)) && !(IS_PHASE_ONE_PROMO.test(this.nextMove))) {
                     // ie if not selection of piece to move
                     console.log(`Moves: ${moves}`);
                }
@@ -443,32 +442,6 @@ export class Game extends React.Component<IGame, IGamePosition> {
                }
           }
      }
-     // componentDidUpdate(prevProps: IGame, prevState: IGamePosition) {
-     //      const control = Game.control;
-     //
-     //      if (this.state.sqidsToPids !== prevState.sqidsToPids) {
-     //           control.updateData();
-     //      }
-     //
-     //      const
-     //           currentPlayer = control.getCurrentPlayer(),
-     //           moves = this.state.moves;
-     //
-     //      if (this.props.test) {
-     //           window.setTimeout(this.runtest, 10, this.props.test);
-     //      } else {
-     //           if (this.nextMove && !(IS_PID.test(this.nextMove)) && !(IS_PHASE_ONE_PROMO.test(this.nextMove))) {
-     //                // ie if not selection of piece to move
-     //                console.log(`Moves: ${moves}`);
-     //           }
-     //
-     //           const nextPlayer = (currentPlayer === 'W') ? this.players[0] : this.players[1];
-     //           if (nextPlayer === 'computer') {
-     //                const lastMove = (moves.length) ? moves[moves.length - 1] : null;
-     //                window.setTimeout(this.computedMove.compute, 250, lastMove);
-     //           }
-     //      }
-     // }
      render() {
           const
                orientation = this.orientation,

@@ -191,15 +191,11 @@ export class Board extends React.Component<IBoard, {}> {
                whiteKing = control.getPiece('WK'),
                blackKingAttackers = blackKing.getAttckrs(),
                whiteKingAttackers = whiteKing.getAttckrs(),
-               // checking = this.props.checking,
-               // chkingpid = (checking.length === 0) ? null : sqidsToPids[checking[0]],
                attacking = this.props.attacking,
                attacked = this.props.attacked,
                defending = this.props.defending,
                defended = this.props.defended;
-               // kpid = ((chkingpid)
-               //      ? (chkingpid[0] === 'W') ? 'BK' : 'WK'
-               //      : null) as PID;
+
 
           if (blackKingAttackers.length && whiteKingAttackers.length) {
                throw Error ('Both kings attacked - impossible');

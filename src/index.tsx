@@ -30,7 +30,7 @@ let redraw = () => {
 				height: ${squareSide}px
 			}
 			.config {
-				font: ${captureSquareDim / 3}px Arial Unicode MS, sans-serif;
+				font: ${captureSquareDim / 2.5}px Arial Unicode MS, sans-serif;
 			}
 			.promotion{
 				font: ${promoSquareDim}px Arial Unicode MS, sans-serif;

@@ -48,6 +48,7 @@ export class ComputedMove {
                elmnt: HTMLElement = null;
 
           if (this.computedMove.pid === null) {
+               // indicate a draw by clicking on opposite king
                const
                     oppkpid = (((currentPlayer === 'W') ? 'B' : 'W') + 'K') as PID,
                     oppKing = control.getPiece(oppkpid),
@@ -60,7 +61,7 @@ export class ComputedMove {
                     from = piece.getSqid(),
                     to = this.computedMove.to,
                     ppid = this.computedMove.ppid,
-                    side = control.getCurrentPlayer();
+                    side = currentPlayer;
 
                if (this.enactedMove.pid === null) {
                     this.enactedMove.pid = pid;
@@ -87,9 +88,6 @@ export class ComputedMove {
                if (lastMove) {
                     if (lastMove.endsWith('#')) {  // checkmate
                          return;
-                    } else if (lastMove.endsWith('=')) {
-                         // stalemate due to repetition
-                         return;
                     } else if (lastMove.endsWith('+')) {
                          // is not checkmate so can escape
                          this.escapeCheck(lastMove);
@@ -98,12 +96,10 @@ export class ComputedMove {
           }
 
           const strategies: Function[] = [
-               // this.deliverCheck,
                this.deliverMate,
                this.considerCaptures,
                this.kingHunt,
                this.computeBestMove,
-               // this.computeRandomMove
           ];
 
           if (this.computedMove.pid === null) {
@@ -119,6 +115,10 @@ export class ComputedMove {
                }
           }
 
+          // if (this.computedMove === null || this.computedMove.pid === null) {
+          //      console.log('computerMove fail');
+          //      return;
+          // }
           this.performComputedMove();
      }
      private isMoveAllowed = (pid: PID, drctn: DIRECTION, from: SQID, to: SQID): boolean => {
@@ -133,7 +133,6 @@ export class ComputedMove {
           sortedPids.map(pid => {
                const
                     control = Game.control;
-               // sortedPidsAndRanks.push([pid, BasicPieceRank[pid[pid.length - 1]]]);
                sortedPidsAndRanks.push([pid, control.getPieceWorth(pid)]);
 
           });
@@ -144,8 +143,6 @@ export class ComputedMove {
           return pids.sort((apid, bpid) => { // rank by lowest piece value first
                const
                     control = Game.control,
-                    // abpr = IS_KING.test(apid) ? 10 : BasicPieceRank[apid[apid.length - 1]],
-                    // bbpr = IS_KING.test(bpid) ? 10 : BasicPieceRank[bpid[bpid.length - 1]],
                     abpr = IS_KING.test(apid) ? 10 : control.getPieceWorth(apid),
                     bbpr = IS_KING.test(bpid) ? 10 : control.getPieceWorth(bpid);
 
@@ -193,7 +190,6 @@ export class ComputedMove {
                          scoredMoves.push({ pid: pid, to: to, ppid: promPid, score: score });
                     }
                     scoredMoves = scoredMoves.sort(this.rankByHighestScore)
-                    // retpid = side + 'Q'; // always return the queen for now
                     retpid = scoredMoves[0].ppid;
                }
           }
@@ -421,8 +417,8 @@ export class ComputedMove {
                     return null;
                },
                assemblePidTos = (kingAccessSquares: SQID[]): PID_TO[] => {
-                    let pidtos: PID_TO[] = [];
-                    // let pidtos: string[] = [];
+                    let
+                         pidtos: PID_TO[] = [];
                     kingAccessSquares.forEach((sqid) => {  // for each opposing kings access squares
                          const drctn = Board.getDirection(sqid, ksqid)
                          myPidArray.forEach((pid) => { // which of my sides pieces can legally move to the access square?

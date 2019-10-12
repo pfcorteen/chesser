@@ -169,11 +169,12 @@ export abstract class Piece {
           for (const drctn of ALL_DIRECTIONS) {
                let sq: SQID = this.sqid;
                while (sq = Board.nextSquare(drctn, sq)) {
-                    const apid: PID = squares[sq];
-                    if (apid) {
+                    const
+                         apid: PID = squares[sq],
+                         aPiece: Piece = gc.getPiece(apid);
+                    if (aPiece) {
                          if (apid !== this.pid) {
                               const
-                                   aPiece: Piece = gc.getPiece(apid),
                                    asqid = aPiece.getSqid();
 
                               if (side !== aPiece.getSide()) {
@@ -193,8 +194,6 @@ export abstract class Piece {
                                         this.dfndrs.push(apid);
                                    }
                               }
-                         } else {
-                              console.log('apid equal this pid!!??');
                          }
                          break;
                     }

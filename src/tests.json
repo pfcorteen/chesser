@@ -1,25 +1,5 @@
 [
      {
-          "name":           "haltingProblem",
-          "piecePositions": null,
-          "moves":          [
-               "WQBPc3","BKNPg5","WQb3","BQPd5","WQBPc4","BQPd4","WQf3","BKNPg4",
-               "WQf4","BKNh6","WQNPb3","BKNf5","WQxg4","BKBh6","WQh5","BKBf4",
-               "WQg4","BKBh6","WQh5","BKBf4","WQg4","BKBh6","WQh5","BKBf4","WQg4","BKBh6",
-               "compute"],
-          "firstTurn":       "W",
-          "testPiece":      "BK",
-          "pieceData": {
-              "legals": [],
-              "accessors": [],
-              "potentials": [],
-              "attckrs": [],
-              "attckng": [],
-              "dfndrs":  [],
-              "dfndng":  []
-          }
-     },
-     {
           "name":           "stalemate",
           "piecePositions": { "BK":"a8", "WK":"c1", "WQ":"c7","WKN":"g5" },
           "moves":          ["compute"],
@@ -30,6 +10,25 @@
               "accessors": ["b8", "c8", "d8", "e8", "f8", "g8", "h8", "b7", "c6",
                    "d5", "e4", "f3", "g2", "h1", "b6", "a7", "a6", "a5", "a4", "a3", "a2", "a1"],
               "potentials": ["b8", "b7", "a7"],
+              "attckrs": [],
+              "attckng": [],
+              "dfndrs":  [],
+              "dfndng":  []
+          }
+     },
+     {
+          "name":           "WQPxd7",
+          "piecePositions": null,
+          "moves":          [
+               "WKPe4","BQPd5","WKPe5","BKBPf6","WQPd4","BKBPxe5","WQPxe5","BQNPb6",
+               "WKBPf4","BQBPc5","WKBb5","BQNd7","WQPe6","BKNf6","WQPxd7",
+               "compute"],
+          "firstTurn":       "W",
+          "testPiece":      "BK",
+          "pieceData": {
+              "legals": [],
+              "accessors": [],
+              "potentials": [],
               "attckrs": [],
               "attckng": [],
               "dfndrs":  [],
@@ -53,22 +52,6 @@
          "attckng": [],
          "dfndrs":  [],
          "dfndng":  ["BKBP"]
-       }
-     },
-     {
-       "name":           "test1",
-       "piecePositions": {"WK":"g5","BK":"e7","WQ":"h7","WKP":"f7","BKN":"g8","BKP":"e6","BQP":"d6"},
-       "moves":          ["WKPxg8=W1R"],
-       "firstTurn":       "W",
-       "testPiece":      "BK",
-       "pieceData": {
-         "legals": [],
-         "accessors": ["e8", "f8", "f7", "g7", "g6", "f6", "f5", "e6", "d5", "d6", "c6", "d7", "c7", "b7", "a7", "c8", "d8"],
-         "potentials": ["e8", "f8", "f7", "f6", "d7", "d8"],
-         "attckrs": ["WQ"],
-         "attckng": [],
-         "dfndrs":  [],
-         "dfndng":  ["BKP", "BQP"]
        }
      },
      {
@@ -124,6 +107,22 @@
          "attckng": ["BK"],
          "dfndrs":  [],
          "dfndng":  ["WKP"]
+       }
+     },
+     {
+       "name":           "test1",
+       "piecePositions": {"WK":"g5","BK":"e7","WQ":"h7","WKP":"f7","BKN":"g8","BKP":"e6","BQP":"d6"},
+       "moves":          ["WKPxg8=W1R"],
+       "firstTurn":       "W",
+       "testPiece":      "BK",
+       "pieceData": {
+         "legals": [],
+         "accessors": ["e8", "f8", "f7", "g7", "g6", "f6", "f5", "e6", "d5", "d6", "c6", "d7", "c7", "b7", "a7", "c8", "d8"],
+         "potentials": ["e8", "f8", "f7", "f6", "d7", "d8"],
+         "attckrs": ["WQ"],
+         "attckng": [],
+         "dfndrs":  [],
+         "dfndng":  ["BKP", "BQP"]
        }
      },
      {
@@ -291,7 +290,8 @@
     "testPiece":      "BK",
     "pieceData": {
       "legals": ["h6", "h4", "g4", "f4","f6"],
-      "accessors": ["g6", "h7", "h6", "h5", "h4", "h3", "g4", "g3", "g2", "g1", "f3", "f4", "e3", "d2", "c1", "e4", "f5", "e5", "e6", "f7"],
+      "accessors": ["g6", "h7", "h6", "h5", "h4", "h3", "g4", "g3", "g2", "g1", "f3", "f4", "e3",
+           "d2", "c1", "e4", "f5", "e5", "e6", "f7"],
       "potentials": ["h6","h5","h4","g4","f4","f5","f6"],
       "attckrs": ["WKR"],
       "attckng": ["WKP"],
@@ -302,12 +302,15 @@
   {
     "name":           "escapeCapture4",
     "piecePositions": null,
-    "moves":          ["WKNf3","BQPd6","WKNPg4","BQBxg4","WKPe3","BQNd7","WQPd4","BQRPa6","WKe2","BQNc5","WQPxc5","BQPxc5","WKRPh3","BQxd1","compute"],
+    "moves":          [
+         "WKNf3","BQPd6","WKNPg4","BQBxg4","WKPe3","BQNd7","WQPd4","BQRPa6",
+         "WKe2","BQNc5","WQPxc5","BQPxc5","WKRPh3","BQxd1","compute"],
     "firstTurn":       "W",
     "testPiece":      "WK",
     "pieceData": {
       "legals": ["d2", "e2", "e1"],
-      "accessors": ["d2", "d3", "d4", "d5", "d6", "d7", "d8", "e3", "e2", "f3", "f2", "e1", "f1", "c1", "b2", "c2", "c3"],
+      "accessors": ["d2", "d3", "d4", "d5", "d6", "d7", "d8", "e3", "e2", "f3", "f2", "e1", "f1",
+           "c1", "b2", "c2", "c3"],
       "potentials": ["d2", "e2", "e1"],
       "attckrs": [],
       "attckng": [],
@@ -429,7 +432,8 @@
   {
     "name":           "test6",
     "piecePositions": null,
-    "moves":          ["WKPe4","BKPe5","WKNf3","BQNc6","WKBb5","BKBc5","O-O","BKNf6","WQNc3","BQPd6","WQPd4","BKPxd4","WKBxc6","BQNPxc6","WKNxd4"],
+    "moves":          ["WKPe4","BKPe5","WKNf3","BQNc6","WKBb5","BKBc5","O-O","BKNf6",
+         "WQNc3","BQPd6","WQPd4","BKPxd4","WKBxc6","BQNPxc6","WKNxd4"],
     "firstTurn":       "W",
     "testPiece":      "BK",
     "pieceData": {
@@ -493,7 +497,10 @@
   {
     "name":           "test10",
     "piecePositions": null,
-    "moves":          ["WQPd4","BQPd5","WKNf3","BKNf6","WQBPc4","BQPxc4","WKPe3","BQBPc5","WKBxc4","BKPe6","O-O","BQRPa6","WKBb3","BQNPb5","WQRPa4","BQNPb4","WKPe4","BQBb7","WKPe5","BKNe4","WQNd2","BKNxd2","WQBxd2","BQBPxd4","WKNg5"],
+    "moves":          [
+         "WQPd4","BQPd5","WKNf3","BKNf6","WQBPc4","BQPxc4","WKPe3","BQBPc5",
+         "WKBxc4","BKPe6","O-O","BQRPa6","WKBb3","BQNPb5","WQRPa4","BQNPb4",
+         "WKPe4","BQBb7","WKPe5","BKNe4","WQNd2","BKNxd2","WQBxd2","BQBPxd4","WKNg5"],
     "firstTurn":       "W",
     "testPiece":      "BQB",
     "pieceData": {
@@ -540,5 +547,25 @@
          "dfndrs":  [],
          "dfndng":  ["BKP"]
       }
+     },
+     {
+          "name":           "haltingProblem",
+          "piecePositions": null,
+          "moves":          [
+               "WQBPc3","BKNPg5","WQb3","BQPd5","WQBPc4","BQPd4","WQf3","BKNPg4",
+               "WQf4","BKNh6","WQNPb3","BKNf5","WQxg4","BKBh6","WQh5","BKBf4",
+               "WQg4","BKBh6","WQh5","BKBf4","WQg4","BKBh6","WQh5","BKBf4","WQg4","BKBh6",
+               "compute"],
+          "firstTurn":       "W",
+          "testPiece":      "BK",
+          "pieceData": {
+              "legals": [],
+              "accessors": [],
+              "potentials": [],
+              "attckrs": [],
+              "attckng": [],
+              "dfndrs":  [],
+              "dfndng":  []
+          }
      },
 ]
