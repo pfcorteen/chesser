@@ -11,7 +11,7 @@ export class Bishop extends Piece {
 	}
 
 	protected findLegalPositions() { this.legals = this.potentials; }
-	
+
 	// protected findLegalPositions() {
      //      const
      //           control = Game.control,

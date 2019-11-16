@@ -89,13 +89,11 @@ export class Board extends React.Component<IBoard, {}> {
           let
                squaresInDirection: SQID[] = [],
                sqid: SQID = from;
-
           if (drctn !== null) {
                while (sqid = Board.nextSquare(drctn, sqid)) {
                     squaresInDirection.push(sqid);
                }
           }
-
           return squaresInDirection;
      }
      static betweenSquares(from: SQID, to: SQID): SQID[] {
@@ -149,7 +147,6 @@ export class Board extends React.Component<IBoard, {}> {
           let
                piece: Piece = null,
                sq: SQID = from;
-
           do {
                sq = Board.nextSquare(drctn, sq);
                if (sq === null) {
@@ -160,18 +157,13 @@ export class Board extends React.Component<IBoard, {}> {
                          // one step pieces (Pawn!??)  - or King too far even without checking because King cannot be next to other king
                          break;
                     }
-                    // if (HALF_WINDS.includes(drctn)) {
-                    //      break;
-                    // }
-                    // if (piece instanceof King) {
-                    //      // King too far even without checking because King cannot be next to other king
-                    //      break;
-                    // }
                }
           } while (!piece);
           return piece;
      }
-
+     static getOppositeDirection(drctn: DIRECTION): DIRECTION {
+          return (drctn < 8) ? drctn + 8 : drctn - 8;
+     }
      handleSquareSelection = (position: SQID): void => {
           this.props.onSquareSelection(position);
      }

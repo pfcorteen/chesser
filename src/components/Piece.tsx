@@ -31,25 +31,24 @@ export abstract class Piece {
      public setSqid = (sqid: SQID): void => { this.sqid = sqid; }
      public getSqid = (): SQID => { return this.sqid; }
      public getSide = (): SIDE => { return this.pid[0] as SIDE; }
-
+     public getStep = (): boolean => { return this.step; }
 
      public isPinned = (destination: SQID): boolean => {
-          // NB: directions of pinning piece established when set
-          let retval = false;
-          if (this.kpin !== null) {
+          // let retval = false;
+          if (this.kpin) {
                const
                     control = Game.control,
                     kpid = this.getSide() + 'K',
                     kpiece = control.getPiece(kpid),
+                    ksqid = kpiece.sqid,
+                    kdrctn = Board.getDirection(ksqid, destination),
                     pnnngPiece = control.getPiece(this.kpin),
                     pnnngSqid = pnnngPiece.sqid,
-                    ksqid = kpiece.sqid,
-                    pnnngDrctn = Board.getDirection(ksqid, pnnngSqid),
-                    kdrctn = Board.getDirection(ksqid, destination);
+                    pnnngDrctn = Board.getDirection(ksqid, pnnngSqid);
 
-               retval = !(kdrctn === pnnngDrctn);
+               return !(kdrctn === pnnngDrctn);
           }
-          return retval;
+          return false;
      }
      public setKPin = (pid: PID): void => {
           this.kpin = pid;

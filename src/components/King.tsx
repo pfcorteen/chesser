@@ -122,9 +122,9 @@ export class King extends Piece {
 		}
 
 		for (const sqid of this.potentials) {
-			const
-				adjacentPiece = control.getPiece(sqid), // NB: opposite side cos same side pieces not included in potentials
-				dfndrs = adjacentPiece ? adjacentPiece.getDfndrs() : [];
+			// const
+			// 	adjacentPiece = control.getPiece(sqid), // NB: opposite side cos same side pieces not included in potentials
+			// 	dfndrs = adjacentPiece ? adjacentPiece.getDfndrs() : [];
 
 			if (control.checkedBy(sqid, oppSide).length === 0) {
 				this.legals.push(sqid);

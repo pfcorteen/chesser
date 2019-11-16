@@ -31,11 +31,12 @@ export class Knight extends Piece {
      //           oppSide = this.getSide() === 'W' ? 'B' : 'W',
      //           ksqid = control.getPiece(oppSide + 'K'). getSqid();
 	//
+	// //TODO - no point in checking every sqid if the piece is pinned
      //      for (const sqid of this.potentials) {
      //           if (pnnngSqid) {
-     //                if (!Board.intercepts(sqid, pnnngSqid, ksqid)) {
+     //                // if (!Board.intercepts(sqid, pnnngSqid, ksqid)) {
      //                     continue;
-     //                }
+     //                // }
      //           }
      //           this.legals.push(sqid);
      //      }

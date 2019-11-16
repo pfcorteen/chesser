@@ -12,6 +12,7 @@ export const IS_BISHOP: RegExp = /.*B$/;
 export const IS_KNIGHT: RegExp = /.*N$/;
 export const IS_PAWN: RegExp = /.*P$/;
 export const IS_PHASE_ONE_PROMO: RegExp = /.*=$/;
+export const IS_SPEC_CHESS_CHAR: RegExp = /\+|\=/gi; // special chess symbols that are also regexp special characters
 
 export const FILES = 'abcdefgh';
 export const RANKS = '12345678';
@@ -30,7 +31,7 @@ export enum SQUARE {
 export type PID = string;
 export type SQID = keyof typeof SQUARE;
 export type PID_TO = [PID, SQID];
-export type PID_FROM_TO = [PID, SQID, SQID];
+export type PID_TO_ONTO = [PID, SQID, SQID];
 
 export const PIECE_ICONS = {
      WK: '\u2654', //'&#9812',   // White King

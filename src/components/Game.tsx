@@ -17,10 +17,8 @@ export class Game extends React.Component<IGame, IGamePosition> {
      public static control: GameControl;
      public static firstTurn: SIDE = 'W';
      private static gameOn = false;
-     // public static nextTurn: SIDE = Game.firstTurn;
 
      public drawChecker = new DrawChecker();
-     // public checked = false;
      private orientation: SIDE = 'W';
      private squareHighlights: boolean = true;
      private nextMove: string = null;
@@ -31,7 +29,6 @@ export class Game extends React.Component<IGame, IGamePosition> {
      public static getDerivedStateFromProps(props, state: IGamePosition): IGamePosition {
           let
                newState: IGamePosition = null,
-
                newMove: IMoveEffect = {
                     selectedSquare: state.selectedSquare,
                     legals: state.legals,
@@ -133,7 +130,10 @@ export class Game extends React.Component<IGame, IGamePosition> {
                defended = this.state.defended,
                attacking = this.state.attacking,
                attacked = this.state.attacked,
-               position = { sqidsToPids: control.getSquares() } as IPosition;
+               position = {
+                    moves: moves,
+                    sqidsToPids: control.getSquares()
+               } as IPosition;
 
 
           if (this.paused) {
@@ -213,7 +213,7 @@ export class Game extends React.Component<IGame, IGamePosition> {
                }
           } else {
                this.nextMove = null;
-               moves.splice(-1, 1);
+               // moves.splice(-1, 1);
                sqid = null;
                legals = [] as SQID[];
                attacking = [] as SQID[];
@@ -231,9 +231,9 @@ export class Game extends React.Component<IGame, IGamePosition> {
           });
 
           this.setState({
+               moves: position.moves,
                sqidsToPids: position.sqidsToPids,
                selectedSquare: sqid,
-               moves: moves,
                legals: legals,
                attacking: attacking,
                attacked: attacked,
@@ -266,7 +266,7 @@ export class Game extends React.Component<IGame, IGamePosition> {
           setTimeout(() => {
                this.setState({
                     sqidsToPids: position.sqidsToPids,
-                    moves: moves,
+                    moves: position.moves,
                     selectedSquare: null,
                     legals: [] as SQID[],
                     promotion: prmtn
@@ -332,7 +332,9 @@ export class Game extends React.Component<IGame, IGamePosition> {
                     const
                          testPiece = Game.control.getPiece(test.testPiece),
                          result = testPiece.confirmPieceData(test.pieceData);
-                    console.log(`${test.name} moves are ${smoves} result is ${result ? 'pass' : 'fail'}`);
+                    if (!result) {
+                         console.log(`${test.name} moves are ${smoves} result is ${result ? 'pass' : 'fail'}`);
+                    }
                };
 
           let
@@ -399,29 +401,8 @@ export class Game extends React.Component<IGame, IGamePosition> {
                currentPlayer = control.getCurrentPlayer(),
                nextPlayer = (currentPlayer === 'W') ? this.players[0] : this.players[1],
                moves = this.state.moves;
-
           let
                lastMove = (moves.length) ? moves[moves.length - 1] : null;
-
-          if (this.state.sqidsToPids !== prevState.sqidsToPids) {
-          // this condition means the board has changed so a move has been made
-               control.updateData();
-               const
-                    oppkpid = currentPlayer + 'K',
-                    oppking = control.getPiece(oppkpid),
-                    checked = oppking.getAttckrs().length > 0;
-               if (checked) {
-                    const
-                         mate = control.isCheckMatePostMove(oppking as King),
-                         result = currentPlayer === 'W' ? '0-1' : '1-0';
-                    lastMove += (mate) ? '#' : '+';
-                    moves[moves.length - 1] = lastMove;
-                    mate && moves.push(result);
-                    this.setState({ moves: moves });
-                    return;
-               }
-          }
-
           if (this.props.test) {
                window.setTimeout(this.runtest, 10, this.props.test);
           } else {

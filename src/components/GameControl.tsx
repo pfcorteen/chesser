@@ -1,5 +1,5 @@
 import { IPosition, IDeconMove, DIRECTION, DIRECTION_GROUP, ALL_DIRECTIONS, HALF_WINDS, CARDINALS, ORDINALS } from "./Model";
-import { FILES, PID, SIDE, SQID, PID_TO, PID_FROM_TO, SQUARE } from './Model';
+import { FILES, PID, SIDE, SQID, PID_TO, PID_TO_ONTO, SQUARE } from './Model';
 import { ALGB_MOVE, IS_PHASE_ONE_PROMO, IS_PID, BasicPieceRank } from './Model';
 import { IS_KING, IS_QUEEN, IS_ROOK, IS_BISHOP, IS_KNIGHT, IS_PAWN } from './Model';
 import { Board } from "./Board";
@@ -98,21 +98,6 @@ export class GameControl {
           piece = this.pieces[id];
           return piece || null;
      };
-     assembleSquares = () => {
-          let squares = {};
-          Object.keys(SQUARE).filter(key => {
-               if (!isNaN(Number(SQUARE[key]))) {
-                    squares[key] = null;
-               }
-          });
-          Object.keys(this.pieces).filter(pid => {
-               const
-                    p: Piece = this.getPiece(pid),
-                    sqid = p.getSqid();
-               squares[sqid] = pid;
-          });
-          this.sqidsToPids = squares as { [key in SQID]: PID | null };
-     };
      getSquares = () => {
           return this.sqidsToPids;
      };
@@ -133,85 +118,18 @@ export class GameControl {
                     piece.updatePositionalData();
                }
           });
-          // kings done deliberately after all other pieces
-          ['BK', 'WK'].forEach(kpid => {
+
+          for (const kpid of ['BK', 'WK']) {
                const king: King = this.getPiece(kpid) as King;
                king.markPins();
                king.markShadows();
                king.updatePositionalData();
-          });
+          }
      }
      getCaptures = (): PID[] => {
           return this.captures;
      };
-     private deconstructMove = (move: string): IDeconMove => {
-          const
-               pieces = this.pieces,
-               algbMatch = move.match(ALGB_MOVE),
-               castling = (algbMatch[1] === 'O'),
-               capture = ((algbMatch[2] && algbMatch[2] === 'x') || false),
-               ep = ((algbMatch[4] && algbMatch[4] === 'ep') || false),
-               promoPhaseOne = ((algbMatch[4] && algbMatch[4] === '=') || false),
-               promo = (algbMatch[5] && algbMatch[5] !== 'O') ? algbMatch[5] : null,
-               mpid = (castling) ? (this.currentPlayer === 'W') ? 'WK' : 'BK' : algbMatch[1],
-               mpiece = pieces[mpid],
-               mfrom = mpiece.getSqid(),
-               mto = (castling)
-                         ? (algbMatch[5] && algbMatch[5] === 'O')
-                              ? (this.currentPlayer === 'W')
-                                   ? 'c1'
-                                   : 'c8'
-                              : (this.currentPlayer === 'W')
-                                   ? 'g1'
-                                   : 'g8'
-                         : algbMatch[3] as SQID,
-               epsquare = ep
-                              ? mto[0] + mfrom[1]
-                              : null,
-               mdrctn = Board.getDirection(mfrom, mto),
-               rpid = castling
-                         ? ((mto[0] === 'g')
-                              ? ((mto[1] === '1')
-                                   ? 'WKR'
-                                   : 'BKR')
-                              : ((mto[1] === '1')
-                                   ? 'WQR'
-                                   : 'BQR'))
-                         : null,
-               rpiece = castling
-                         ? pieces[rpid]
-                         : null,
-               rfrom = castling
-                         ? rpiece.getSqid()
-                              : null,
-               rto = castling
-                         ? ((rpid[0] === 'W')
-                              ? ((rpid[1] === 'K')
-                                   ? 'f1'
-                                   : 'd1')
-                              : ((rpid[1] === 'K')
-                                   ? 'f8'
-                                   : 'd8'))
-                         : null;
 
-          return {
-               castling: castling,
-               ep: ep,
-               epsquare: epsquare,
-               capture: capture,
-               promoPhaseOne: promoPhaseOne,
-               promo: promo,
-               mpid: mpid,
-               mpiece: mpiece,
-               mfrom: mfrom,
-               mto: mto,
-               mdrctn: mdrctn,
-               rpid: rpid,
-               rpiece: rpiece,
-               rfrom: rfrom,
-               rto: rto
-          } as IDeconMove;
-     }
      selfCheck = (fromsqid: SQID, tosqid: SQID): boolean => {
           // if piece on fromsqid is moved will there be discovered check?
           // if piece moves to tosqid will it's king be in check?
@@ -349,21 +267,21 @@ export class GameControl {
           }
           return pieceBuffer;
      };
-     isCheckMatePreMove = (king: King, nextMove?: PID_FROM_TO): boolean => {
+     isCheckMatePreMove = (king: King, nextMove?: PID_TO_ONTO): boolean => {
           // should only be called when king is checked, therefore must be one or two attackers
           // if nextmove is present then the assessment is pre-move, else the assessment
           // is post-move and the 'nextMove' parameter unnecessary
           const
-               [ mpid, mfrom, mto ] = nextMove,
+               [ mpid, mto, monto ] = nextMove,
                kpid = king.getPid(),
                ksqid = king.getSqid(),
                mpiece: Piece = this.getPiece(mpid),
-               checkdrctn: DIRECTION = Board.getDirection(mto, ksqid),
-               mcheck: boolean = (Board.alignedWith(mto, checkdrctn) === king),
+               checkdrctn: DIRECTION = Board.getDirection(monto, ksqid),
+               mcheck: boolean = (Board.alignedWith(monto, checkdrctn) === king),
                shadowedPid: PID = mpiece ? mpiece.getKShadow() : null, // promoting pawn dissappears
                sPiece = shadowedPid ? this.getPiece(shadowedPid) : null,
                ssqid  = shadowedPid ? sPiece.getSqid(): null,
-               cpid = this.sqidsToPids[mto]; // newMove may include a capture
+               cpid = this.sqidsToPids[monto]; // newMove may include a capture
 
           let
                csqid: SQID = null, // later used for single check sqid
@@ -372,14 +290,14 @@ export class GameControl {
 
           if (klegals.length) {
                const
-                    mtoKingSqids = Board.fromDirectionSquares(mto, checkdrctn),
-                    shadowDrctn: DIRECTION = Board.getDirection(mfrom, ksqid);
+                    mtoKingSqids = Board.fromDirectionSquares(monto, checkdrctn),
+                    shadowDrctn: DIRECTION = Board.getDirection(mto, ksqid);
 
                klegals = klegals.filter(lgl => { return !mtoKingSqids.includes(lgl); } );
 
                if (shadowedPid && checkdrctn !== shadowDrctn) { // shadowed piece exposed so must be checked
                     scheck = true;
-                    const mfromSqids = Board.fromDirectionSquares(mfrom, shadowDrctn);
+                    const mfromSqids = Board.fromDirectionSquares(mto, shadowDrctn);
                     klegals = klegals.filter(lgls => { return !mfromSqids.includes(lgls); } );
                }
 
@@ -392,7 +310,7 @@ export class GameControl {
           }
 
           // check from a single piece - from which square?
-          csqid = mcheck ? mto : ssqid;
+          csqid = mcheck ? monto : ssqid;
 
           // at this point we know king can't move and only a single check on king
           // so can checking piece be taken ?
@@ -405,7 +323,7 @@ export class GameControl {
                          opiece = this.getPiece(opid),
                          olegals = opiece.getLegals();
                     if (olegals.includes(csqid)) { // sinlge checking piece can be captured
-                         if (IS_PAWN.test(opid) && (opiece.getSqid()[0] === mto[0])) {
+                         if (IS_PAWN.test(opid) && (opiece.getSqid()[0] === monto[0])) {
                               continue;
                          }
                          return false; // not mate
@@ -423,7 +341,7 @@ export class GameControl {
                          ilegals = ipiece.getLegals();
                     for (const ilsqid of ilegals) {
                          if (isqids.includes(ilsqid)) {
-                              if (IS_PAWN.test(ipid) && (ipiece.getSqid()[0] === mto[0])) {
+                              if (IS_PAWN.test(ipid) && (ipiece.getSqid()[0] === monto[0])) {
                                    continue;
                               }
                               return false; // not mate
@@ -498,45 +416,77 @@ export class GameControl {
           }
           return tkrPids;
      }
-     squareExchangers = ([mpid, sqid]: PID_TO): [PID[], PID[]] => { // all pieces that can move to this square
-          let whitePids: PID[] = [], blackPids: PID[] = [];
-          ALL_DIRECTIONS.forEach((drctn) => {
-               let sq = sqid;
+     squareExchangers = ([mpid, mto]: PID_TO, promoted?: boolean): [PID[], PID[]] => {
+          // all other pieces that can move to this square
+          if (mpid === 'BQ' && mto === 'e6') {
+               console.log('squareExchangers');
+          }
+
+          promoted = promoted ? promoted : false;
+
+          const
+               mpiece = this.getPiece(mpid),
+               msqid = promoted ? mto : (mpiece ? mpiece.getSqid() : mto); // piece is moving from here
+          let
+               whitePids: PID[] = [],
+               blackPids: PID[] = [];
+          for (const drctn of ALL_DIRECTIONS) {
+               let sq = mto;
                while (sq = Board.nextSquare(drctn, sq)) {
-                    const piece = this.getPiece(sq);
-                    if (piece) {
-                         const
-                              pid = piece.getPid(),
-                              forwardPawn = IS_PAWN.test(pid) && CARDINALS.includes(drctn), // pawn moving without capture
-                              accessible = piece.getPotentials().includes(sqid); // potentials not sufficient as pawns can only capture diagonally step one
-                         if (accessible && !piece.isPinned(sqid) && !forwardPawn) {
-                              (pid[0] === 'W') ? whitePids.push(pid) : blackPids.push(pid);
-                              continue; // skip this piece and continue this drctn to find discovered exchangers
-                         } else if (pid === mpid) {
-                              continue; // skip this piece and continue this drctn to find discovered exchangers
-                         } else if (IS_PAWN.test(pid)) {
-                              const
-                                   pdrctn: DIRECTION = Board.getDirection(sq, sqid);
-                              if (ORDINALS.includes(pdrctn) && piece.directions.includes(pdrctn) && sqid === Board.nextSquare(pdrctn, sq)) {
-                                   // pawn can only exchange on diagonal one square forward
-                                   if (piece.isPinned(sqid) && piece.getKPin() !== mpid) {
-                                        continue;
+                    const epiece = this.getPiece(sq); // exchanger piece
+                    if (epiece) {
+                         const epid = epiece.getPid();
+                         if (epid !== mpid) {
+                              const kpPid = epiece.getKPin();
+                              if (kpPid) {
+                                   const
+                                        oppside = (kpPid[0] === 'W') ? 'B' : 'W',
+                                        oppkpid = oppside + 'K' as PID,
+                                        oppking = this.getPiece(oppkpid),
+                                        oppksqid = oppking.getSqid(),
+                                        kppiece = this.getPiece(kpPid),
+                                        kpsqid = kppiece.getSqid(),
+                                        pinDrctn = Board.getDirection(kpsqid, oppksqid);
+                                   if (pinDrctn === Board.getDirection(mto, oppksqid)) {
+                                   // the pinning piece moves and abandons the pin ?
+                                        const
+                                             apiece = Board.alignedWith(msqid, pinDrctn),
+                                             apid = apiece ? apiece.getPid() : null;
+                                        if (apid && (apid[0] !== oppside) && (apiece.directions.includes(pinDrctn))) {
+                                             continue;
+                                        }
                                    }
-                                   (pid[0] === 'W') ? whitePids.push(pid) : blackPids.push(pid);
+                                   else if (kpPid !== mpid) {
+                                        continue
+                                   }
                               }
-                         } else if (piece.directions.includes(drctn)) {
-                              if (IS_KING.test(pid) && !(sq === Board.nextSquare(drctn, sqid))) {
-                                   break; // king must be one square away to exhange
+
+                              if (IS_PAWN.test(epid)) {
+                                   const pdrctn = Board.getDirection(sq, mto);
+                                   if (ORDINALS.includes(pdrctn)
+                                        && epiece.directions.includes(pdrctn)
+                                             && (mto === Board.nextSquare(pdrctn, sq))) {
+                                        (epid[0] === 'W') ? whitePids.push(epid) : blackPids.push(epid);
+                                        continue
+                                   } else {
+                                        break;
+                                   }
+                              } else if (epiece.directions.includes(drctn)) {
+                                   if (IS_KING.test(epid) && !(sq === Board.nextSquare(drctn, mto))) {
+                                        break; // king must be one square away to exhange
+                                   }
+                                   (epid[0] === 'W') ? whitePids.push(epid) : blackPids.push(epid);
+                                   // continue;
                               }
-                              (pid[0] === 'W') ? whitePids.push(pid) : blackPids.push(pid);
+                              break;
                          }
-                         break;
                     }
+
                     if (HALF_WINDS.includes(drctn)) {
                          break;
                     }
                }
-          });
+          }
           return [whitePids, blackPids];
      }
      interceptAlignment = (attacked: Piece, attckngSqid: SQID): PID_TO[] => {
@@ -580,23 +530,22 @@ export class GameControl {
                     rpid, rpiece, rfrom, rto
                } = this.deconstructMove(move),
                postMoveProcessing = (): void => {
-                    // this func currently not moved
                     const
                          currentPlayer = this.currentPlayer,
                          oppkpid = (currentPlayer === 'W') ? 'BK' : 'WK',
                          oppking = this.getPiece(oppkpid),
-                         oppksqid = oppking.getSqid(),
-                         checkedBy: Piece[] = this.checkedBy(oppksqid, currentPlayer);
+                         checked = oppking.getAttckrs().length > 0;
 
-                    if (checkedBy.length) {
-                         const mate = this.isCheckMatePostMove(oppking as King);
-                         move += (this.isCheckMatePostMove(oppking as King)) ? '#' : '+';
+
+                    if (checked) {
+                         const
+                              mate = this.isCheckMatePostMove(oppking as King),
+                              result = currentPlayer === 'W' ? '0-1' : '1-0';
+                         move += mate ? '#' : '+';
                     }
                };
 
-
-          if (mfrom === mto) {
-               // must be promotion phase 2
+          if (mfrom === mto) { // must be promotion phase 2
                promo && this.capture(mpid);
                promo && this.promote(promo, mto);
           } else {
@@ -617,9 +566,11 @@ export class GameControl {
                }
           }
 
+          this.assembleSquares();
+
           if (!(IS_PHASE_ONE_PROMO.test(move))) { // not a 2 phase move
-               // this.updateData();
-               // postMoveProcessing();
+               this.updateData();
+               postMoveProcessing();
                this.currentPlayer = (this.currentPlayer === 'W') ? 'B' : 'W';
           }
 
@@ -630,26 +581,15 @@ export class GameControl {
                this.moves.push(move);
           }
 
-          this.assembleSquares();
+          if (move.endsWith('#')) {
+               this.moves.push((move[0] === 'W') ? '1-0' : '0-1');
+          }
+          // this.assembleSquares();
           return {
                moves: this.moves,
                sqidsToPids: this.sqidsToPids
           };
      }
-     capture = (id: PID | SQID, ep: SQID = null): void => {
-          const
-               pid = (id in SQUARE) ? this.sqidsToPids[id] : id,
-               p = this.getPiece(pid),
-               sq = p.getSqid();
-          delete this.pieces[pid];
-          if (ep) { this.sqidUpdateArray.push(sq); }
-          this.captures.push(pid);
-     };
-     private promote = (pid: PID, sqid: SQID): void => {
-          const promotedPiece = GameControl.createPiece(pid, sqid);
-          this.pieces[pid] = promotedPiece;
-          this.promotion = null;
-     };
      public updateData = (): void => {
           let pids: PID[] = []; // allows do kings for pin data
           this.sqidUpdateArray.forEach(sq => {
@@ -677,6 +617,29 @@ export class GameControl {
           });
           return arr;
      };
+     // public getPieceWorth = (pid: PID): number => {
+     //      const
+     //           piecetype = pid[pid.length - 1],
+     //           piece = this.getPiece(pid),
+     //           sqid = piece ? piece.getSqid() : null,
+     //           rank = sqid ? parseInt(sqid[1]) : 0;
+     //
+     //      let
+     //           score: number = parseInt(BasicPieceRank[piecetype]);
+     //
+     //      score = IS_PAWN.test(pid)
+     //                ? pid[0] === 'W'
+     //                     ? rank
+     //                     : 8 - rank
+     //                : score;
+     //      score += piece
+     //                ? piece.getLegals().length + (piece.getKShadow() ? 1 : 0) +
+     //                  piece.getAttckng().length + piece.getDfndng().length -
+     //                  piece.getAttckrs().length - piece.getDfndrs().length -
+     //                  (piece.getKPin() ? 1 : 0)
+     //                : 0;
+     //      return score;
+     // };
      public getPieceWorth = (pid: PID): number => {
           const
                piecetype = pid[pid.length - 1],
@@ -687,14 +650,14 @@ export class GameControl {
           let
                score: number = parseInt(BasicPieceRank[piecetype]);
 
-          // some TODO here
-          // score = IS_PAWN.test(pid) ? (sqid ? parseInt(sqid[1]) : 0) : score;
           score = IS_PAWN.test(pid)
                     ? pid[0] === 'W'
                          ? rank
                          : 8 - rank
                     : score;
-          score += piece ? piece.getLegals().length : 0;
+          // score += piece
+          //           ? piece.getLegals().length
+          //           : 0;
           return score;
      };
      public setCurrentPlayer = (player: SIDE): void => {
@@ -714,6 +677,103 @@ export class GameControl {
      private currentPlayer: SIDE = null;
      private moves: string[] = [];
 
+     private assembleSquares = () => {
+          let squares = {};
+          Object.keys(SQUARE).filter(key => {
+               if (!isNaN(Number(SQUARE[key]))) {
+                    squares[key] = null;
+               }
+          });
+          Object.keys(this.pieces).filter(pid => {
+               const
+                    p: Piece = this.getPiece(pid),
+                    sqid = p.getSqid();
+               squares[sqid] = pid;
+          });
+          this.sqidsToPids = squares as { [key in SQID]: PID | null };
+     };
+     private deconstructMove = (move: string): IDeconMove => {
+          const
+               pieces = this.pieces,
+               algbMatch = move.match(ALGB_MOVE),
+               castling = (algbMatch[1] === 'O'),
+               capture = ((algbMatch[2] && algbMatch[2] === 'x') || false),
+               ep = ((algbMatch[4] && algbMatch[4] === 'ep') || false),
+               promoPhaseOne = ((algbMatch[4] && algbMatch[4] === '=') || false),
+               promo = (algbMatch[5] && algbMatch[5] !== 'O') ? algbMatch[5] : null,
+               mpid = (castling) ? (this.currentPlayer === 'W') ? 'WK' : 'BK' : algbMatch[1],
+               mpiece = pieces[mpid],
+               mfrom = mpiece.getSqid(),
+               mto = (castling)
+                         ? (algbMatch[5] && algbMatch[5] === 'O')
+                              ? (this.currentPlayer === 'W')
+                                   ? 'c1'
+                                   : 'c8'
+                              : (this.currentPlayer === 'W')
+                                   ? 'g1'
+                                   : 'g8'
+                         : algbMatch[3] as SQID,
+               epsquare = ep
+                              ? mto[0] + mfrom[1]
+                              : null,
+               mdrctn = Board.getDirection(mfrom, mto),
+               rpid = castling
+                         ? ((mto[0] === 'g')
+                              ? ((mto[1] === '1')
+                                   ? 'WKR'
+                                   : 'BKR')
+                              : ((mto[1] === '1')
+                                   ? 'WQR'
+                                   : 'BQR'))
+                         : null,
+               rpiece = castling
+                         ? pieces[rpid]
+                         : null,
+               rfrom = castling
+                         ? rpiece.getSqid()
+                              : null,
+               rto = castling
+                         ? ((rpid[0] === 'W')
+                              ? ((rpid[1] === 'K')
+                                   ? 'f1'
+                                   : 'd1')
+                              : ((rpid[1] === 'K')
+                                   ? 'f8'
+                                   : 'd8'))
+                         : null;
+
+          return {
+               castling: castling,
+               ep: ep,
+               epsquare: epsquare,
+               capture: capture,
+               promoPhaseOne: promoPhaseOne,
+               promo: promo,
+               mpid: mpid,
+               mpiece: mpiece,
+               mfrom: mfrom,
+               mto: mto,
+               mdrctn: mdrctn,
+               rpid: rpid,
+               rpiece: rpiece,
+               rfrom: rfrom,
+               rto: rto
+          } as IDeconMove;
+     }
+     private promote = (pid: PID, sqid: SQID): void => {
+          const promotedPiece = GameControl.createPiece(pid, sqid);
+          this.pieces[pid] = promotedPiece;
+          this.promotion = null;
+     };
+     private capture = (id: PID | SQID, ep: SQID = null): void => {
+          const
+               pid = (id in SQUARE) ? this.sqidsToPids[id] : id,
+               p = this.getPiece(pid),
+               sq = p.getSqid();
+          delete this.pieces[pid];
+          if (ep) { this.sqidUpdateArray.push(sq); }
+          this.captures.push(pid);
+     };
      constructor(piecePositions: { [key in PID]: SQID; } | null) {
 
           function targetConstructor(position) { /* empty dummy */ }
