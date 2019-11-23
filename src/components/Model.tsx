@@ -32,6 +32,7 @@ export type PID = string;
 export type SQID = keyof typeof SQUARE;
 export type PID_TO = [PID, SQID];
 export type PID_TO_ONTO = [PID, SQID, SQID];
+export type PID_WITH_RANK = [PID, number];
 
 export const PIECE_ICONS = {
      WK: '\u2654', //'&#9812',   // White King

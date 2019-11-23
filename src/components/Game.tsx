@@ -332,9 +332,9 @@ export class Game extends React.Component<IGame, IGamePosition> {
                     const
                          testPiece = Game.control.getPiece(test.testPiece),
                          result = testPiece.confirmPieceData(test.pieceData);
-                    if (!result) {
+                    // if (!result) {
                          console.log(`${test.name} moves are ${smoves} result is ${result ? 'pass' : 'fail'}`);
-                    }
+                    // }
                };
 
           let

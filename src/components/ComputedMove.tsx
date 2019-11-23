@@ -1,4 +1,5 @@
-import { PID, PID_TO, PID_TO_ONTO, SQID, SIDE, IS_KING, IS_PAWN, IS_KNIGHT, DIRECTION, CARDINALS, ORDINALS } from "./Model";
+import { PID, PID_TO, PID_TO_ONTO, PID_WITH_RANK, SQID, SIDE, } from "./Model";
+import { IS_KING, IS_PAWN, IS_KNIGHT, DIRECTION, CARDINALS, ORDINALS, ALL_DIRECTIONS } from "./Model";
 import { IScoredMove, IGameMove, IGeneratedMove, BasicPieceRank } from "./Model";
 import { Piece } from "./Piece";
 import { Game } from "./Game";
@@ -783,92 +784,112 @@ export class ComputedMove {
 		return scoredMoves.length ? scoredMoves[0] : null;
 	}
 	squareValueReOccupy = ([mpid, mto]: PID_TO, promoted: boolean = false): number => {
-		if (mpid === 'BQBP' && mto === 'c6') {
+		// note that scoring is always with respect to the side of first moving piece i.e. mpid
+		if (mpid === 'BKNP' && mto === 'h5') {
 			console.log('bullseye squareValueReOccupy');
 		}
-		let retScore: number;
-		if ((retScore = this.moveScorer({pid: mpid, to: mto, ppid: null })) !== undefined) {
+		let retScore: number = this.moveScorer({pid: mpid, to: mto, ppid: null });
+		if (retScore) {
+			// this move has already been scored - no need to redo
 			return retScore;
+		} else {
+			retScore = 0;
 		}
 
 		const
 			control = Game.control,
 			myside: SIDE = mpid[0] as SIDE,
+			oppside: SIDE = (myside === 'W') ? 'B' : 'W',
 			mpiece = control.getPiece(mpid),
 			mpRank: number = control.getPieceWorth(mpid),
 			cpid = control.getPid(mto), // pid of a captured piece
-			cpRank: number = cpid ? control.getPieceWorth(cpid) : 0;
+			cpRank: number = cpid ? control.getPieceWorth(cpid) : 0,
+			nextExchangerPid = (exchangerPids: [PID, number][][], side: SIDE): [PID, number] => {
+				let drctn = -1, pid = null, rank = 1001;
+				exchangerPids.forEach((element, index, array) => {
+					const
+						[epid, erank] = element[0],
+						epiece = control.getPiece(epid),
+						pinned = epiece.isPinned(mto);
+					if (epid[0] === side && !pinned && erank < rank) {
+						drctn = index;
+						pid = epid;
+						rank = erank;
+					}
+				});
+				if (pid) {
+					const pidWithRank = exchangerPids[drctn].shift();
+					(exchangerPids[drctn].length === 0) && (delete exchangerPids[drctn]);
+					return pidWithRank;
+				}
+				return null;
+			};
 
 		if (mpiece && mpiece.isPinned(mto)) {
 			return -1000; // move not allowed
 		}
 
 		let
-			[whites, blacks] = control.squareExchangers([mpid, mto], promoted),
-			[mypids, oppids] = (myside === 'W') ? [whites, blacks] : [blacks, whites], // my attackers, opposing defenders
-			mypidsWithRank = this.sortPidsAndRank(mypids),
-			oppidsWithRank = this.sortPidsAndRank(oppids),
+			pidsWithRankByDirection: [PID, number][][] = control.squareExchangers([mpid, mto], promoted),
 			myScore: number = cpRank,
 			oppScore: number = 0,
 			myMove = true,
-			shifted: [PID, number];
+			pid = mpid,
+			rank = mpRank;
 
-		mypids = mypids.filter(pid => { return pid !== mpid; });
+		if (pidsWithRankByDirection.length) {
+			while (pidsWithRankByDirection.length) {
+				let
+					myNxtPiece: PID_WITH_RANK,
+					oppNxtPiece: PID_WITH_RANK;
+				if (myMove) {
+					oppNxtPiece = nextExchangerPid(pidsWithRankByDirection, oppside);
+					myNxtPiece = nextExchangerPid(pidsWithRankByDirection, myside);
+				} else {
+					myNxtPiece = nextExchangerPid(pidsWithRankByDirection, myside);
+					oppNxtPiece = nextExchangerPid(pidsWithRankByDirection, oppside);
+				}
 
-		if (IS_KING.test(mpid) && oppids.length) {
-			if (oppids.length === 1 && control.getPiece(oppids[0]).isPinned(mto)) {
-				oppids.length = 0;
-			} else {
-				retScore = -mpRank;
-				this.moveScorer({pid: mpid, to: mto, ppid: null }, retScore);
-				return retScore;
+				if (IS_KING.test(pid) && (myMove ? oppNxtPiece : myNxtPiece)) {
+					// king would be moving into check - so disallow
+					// const mypieces = myMove ? mattckrsWithRank : odfndrsWithRank;
+					// mypieces.length && mypieces.push([pid, rank]); // put on end but not if end is beginning
+					retScore = myMove ? myScore -= rank : oppScore -= rank;
+					continue; // other defenders?
+				} else if (myMove) {
+					if (!oppNxtPiece) {
+						retScore = myScore - oppScore;
+						break;
+					} else if (!myNxtPiece) {
+						retScore = cpRank - rank;
+						break;
+					} else if (rank > oppNxtPiece[1]) {
+						retScore = -rank;
+						break;
+					}
+				} else {
+					if (!myNxtPiece) {
+						retScore = -(oppScore - myScore);
+						break;
+					} else if (!oppNxtPiece) {
+						retScore = rank - myScore;
+						break;
+					} else if (rank > myNxtPiece[1]) {
+						retScore = -rank;
+						break;
+					}
+				}
+
+				myMove ? myScore += rank : oppScore += rank;
+				myMove = !myMove;
+
+				pid = myMove ? myNxtPiece[0] : oppNxtPiece[0];
+				rank = myMove ? myNxtPiece[1] : oppNxtPiece[1];
 			}
+		} else {
+			retScore = myScore;
 		}
 
-		mypidsWithRank.unshift([mpid, mpRank]); // put moving piece back on front of moves
-
-		while (shifted = myMove ? mypidsWithRank.shift() : oppidsWithRank.shift()) {
-			const
-				[pid, rank] = shifted,
-				oppExchanger = myMove ? oppidsWithRank.length > 0 : mypidsWithRank.length > 0;
-
-			if (IS_KING.test(pid) && oppExchanger) {
-				// king would be moving into check - so disallow
-				// const mypieces = myMove ? mattckrsWithRank : odfndrsWithRank;
-				// mypieces.length && mypieces.push([pid, rank]); // put on end but not if end is beginning
-				retScore = myMove ? myScore += rank : oppScore += rank;
-				continue; // other defenders?
-			} else if (myMove) {
-				if ((oppidsWithRank.length === 0)) {
-					retScore = myScore - oppScore;
-					// return this.moveScorer({pid: mpid, to: mto, ppid: null }, retScore);
-					break;
-				} else if (mypidsWithRank.length === 0) {
-					retScore = cpRank - rank;
-					// return this.moveScorer({pid: mpid, to: mto, ppid: null }, retScore);
-					break;
-				} else if (rank > oppidsWithRank[0][1]) {
-					retScore = -rank;
-					break;
-				}
-			} else {
-				if ((mypidsWithRank.length === 0)) {
-					retScore = -(oppScore - myScore);
-					break;
-					// return this.moveScorer({pid: mpid, to: mto, ppid: null }, retScore);
-				} else if (oppidsWithRank.length === 0) {
-					retScore = rank - myScore;
-					break;
-					// return this.moveScorer({pid: mpid, to: mto, ppid: null }, retScore);
-				} else if (rank > mypidsWithRank[0][1]) {
-					retScore = -rank;
-					break;
-				}
-			}
-
-			myMove ? myScore += rank : oppScore += rank;
-			myMove = !myMove;
-		}
 
 		return this.moveScorer({pid: mpid, to: mto, ppid: null }, retScore);
 	}

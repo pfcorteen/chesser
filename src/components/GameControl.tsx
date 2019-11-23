@@ -1,5 +1,5 @@
 import { IPosition, IDeconMove, DIRECTION, DIRECTION_GROUP, ALL_DIRECTIONS, HALF_WINDS, CARDINALS, ORDINALS } from "./Model";
-import { FILES, PID, SIDE, SQID, PID_TO, PID_TO_ONTO, SQUARE } from './Model';
+import { FILES, PID, SIDE, SQID, PID_TO, PID_TO_ONTO, PID_WITH_RANK, SQUARE } from './Model';
 import { ALGB_MOVE, IS_PHASE_ONE_PROMO, IS_PID, BasicPieceRank } from './Model';
 import { IS_KING, IS_QUEEN, IS_ROOK, IS_BISHOP, IS_KNIGHT, IS_PAWN } from './Model';
 import { Board } from "./Board";
@@ -416,10 +416,10 @@ export class GameControl {
           }
           return tkrPids;
      }
-     squareExchangers = ([mpid, mto]: PID_TO, promoted?: boolean): [PID[], PID[]] => {
-          // all other pieces that can move to this square
+     squareExchangers = ([mpid, mto]: PID_TO, promoted?: boolean): [PID, number][][] => {
+          // all other pieces that can move to this square but excluding pieces behind directly
           if (mpid === 'BQ' && mto === 'e6') {
-               console.log('squareExchangers');
+               console.log('newSquareExchangers');
           }
 
           promoted = promoted ? promoted : false;
@@ -429,9 +429,12 @@ export class GameControl {
                msqid = promoted ? mto : (mpiece ? mpiece.getSqid() : mto); // piece is moving from here
           let
                whitePids: PID[] = [],
-               blackPids: PID[] = [];
+               blackPids: PID[] = [],
+               pidsByDirection: PID[][] = [];
           for (const drctn of ALL_DIRECTIONS) {
-               let sq = mto;
+               let
+                    sq = mto;
+               pidsByDirection[drctn] = [];
                while (sq = Board.nextSquare(drctn, sq)) {
                     const epiece = this.getPiece(sq); // exchanger piece
                     if (epiece) {
@@ -467,19 +470,19 @@ export class GameControl {
                                         && epiece.directions.includes(pdrctn)
                                              && (mto === Board.nextSquare(pdrctn, sq))) {
                                         (epid[0] === 'W') ? whitePids.push(epid) : blackPids.push(epid);
-                                        continue
-                                   } else {
-                                        break;
+                                        pidsByDirection[drctn].push(epid);
+                                        continue;
                                    }
                               } else if (epiece.directions.includes(drctn)) {
                                    if (IS_KING.test(epid) && !(sq === Board.nextSquare(drctn, mto))) {
                                         break; // king must be one square away to exhange
                                    }
                                    (epid[0] === 'W') ? whitePids.push(epid) : blackPids.push(epid);
-                                   // continue;
+                                   pidsByDirection[drctn].push(epid);
+                                   continue;
                               }
-                              break;
                          }
+                         break;
                     }
 
                     if (HALF_WINDS.includes(drctn)) {
@@ -487,7 +490,26 @@ export class GameControl {
                     }
                }
           }
-          return [whitePids, blackPids];
+
+          const orderExchangerPids = (pidsByDirection: PID[][]): PID_WITH_RANK[][] => {
+               const organisedPids: PID_WITH_RANK[][] = [];
+               for (const d of ALL_DIRECTIONS) {
+                    // remove empty array elements
+                    if (pidsByDirection[d].length === 0) {
+                         delete pidsByDirection[d];
+                    } else {
+                         const pid: PID = pidsByDirection[d][0];
+                         let pidWithRank: PID_WITH_RANK = [pid, this.getPieceWorth(pid)];
+                         if (!organisedPids[d]) {
+                              organisedPids[d] = [];
+                         }
+                         organisedPids[d].push(pidWithRank);
+                    }
+               }
+               return organisedPids;
+          };
+          const pidsWithRankByDirection: [PID, number][][] = orderExchangerPids(pidsByDirection);
+          return pidsWithRankByDirection;
      }
      interceptAlignment = (attacked: Piece, attckngSqid: SQID): PID_TO[] => {
           const
@@ -617,29 +639,6 @@ export class GameControl {
           });
           return arr;
      };
-     // public getPieceWorth = (pid: PID): number => {
-     //      const
-     //           piecetype = pid[pid.length - 1],
-     //           piece = this.getPiece(pid),
-     //           sqid = piece ? piece.getSqid() : null,
-     //           rank = sqid ? parseInt(sqid[1]) : 0;
-     //
-     //      let
-     //           score: number = parseInt(BasicPieceRank[piecetype]);
-     //
-     //      score = IS_PAWN.test(pid)
-     //                ? pid[0] === 'W'
-     //                     ? rank
-     //                     : 8 - rank
-     //                : score;
-     //      score += piece
-     //                ? piece.getLegals().length + (piece.getKShadow() ? 1 : 0) +
-     //                  piece.getAttckng().length + piece.getDfndng().length -
-     //                  piece.getAttckrs().length - piece.getDfndrs().length -
-     //                  (piece.getKPin() ? 1 : 0)
-     //                : 0;
-     //      return score;
-     // };
      public getPieceWorth = (pid: PID): number => {
           const
                piecetype = pid[pid.length - 1],
@@ -655,9 +654,6 @@ export class GameControl {
                          ? rank
                          : 8 - rank
                     : score;
-          // score += piece
-          //           ? piece.getLegals().length
-          //           : 0;
           return score;
      };
      public setCurrentPlayer = (player: SIDE): void => {
