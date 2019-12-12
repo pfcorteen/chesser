@@ -67,9 +67,9 @@ export class King extends Piece {
 				checkShadow = false;
 			while(sqid = Board.nextSquare(drctn, sqid)) {
 				let pid: PID = null;
-				if ((pid = control.getPid(sqid)) && !(IS_KING.test(pid))) {
+				// if ((pid = control.getPid(sqid)) && !(IS_KING.test(pid))) {
+				if (pid = control.getPid(sqid)) { // king can be shadowed but not pinned!
 					const piece = control.getPiece(pid);
-
 					if (piece.getSide() === this.getSide()) {
 						break;
 					} else if (!piece.directions.includes(drctn)) {

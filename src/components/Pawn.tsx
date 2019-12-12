@@ -11,7 +11,8 @@ export class Pawn extends Piece {
 	};
 
 	public moved = false;
-
+	public step = false;
+	
 	public auxiliaryAction = (sqid: SQID, control: GameControl | null): void => {
 		control = control || Game.control;
 		this.kpin = null;
@@ -41,8 +42,6 @@ export class Pawn extends Piece {
 			control.setPromotion(sqid);
 		}
 	};
-
-
 	alignedWith = (sqid: SQID): boolean => {
 		const
 			drctn = Board.getDirection(this.sqid, sqid),
@@ -61,7 +60,6 @@ export class Pawn extends Piece {
 			this.moved = true;
 		}
 	}
-
 	protected findLegalPositions() {
 		const
 			control = Game.control,

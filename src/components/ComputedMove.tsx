@@ -143,12 +143,12 @@ export class ComputedMove {
 		if (a.score === b.score) {
 			return abps - bbps;
 		}
-		return b.score - a.score
+		return b.score - a.score;
 	}
 	private rankByHighestScore = (a, b): number => {
-		// rank by lowest piece value within highest score first
+		// rank by highest piece value within highest score first
 		const
-		control = Game.control,
+			control = Game.control,
 			apid = a.pid,
 			bpid = b.pid,
 			abps = a.score + control.getPieceWorth(apid),
@@ -156,7 +156,7 @@ export class ComputedMove {
 		if (a.score === b.score) {
 			return bbps - abps;
 		}
-		return b.score - a.score
+		return a.score - b.score;
 	}
 	private promo = (pid: PID, to: SQID): PID => {
 		let retpid: PID = null;
@@ -178,7 +178,7 @@ export class ComputedMove {
 		return retpid;
 	}
 	private computeBestMove = (): IGeneratedMove => {
-	console.log(' entered computeBestMove');
+	// console.log(' entered computeBestMove');
 		const
 			control = Game.control,
 			currentPlayer = control.getCurrentPlayer(),
@@ -220,7 +220,7 @@ export class ComputedMove {
 		return generatedMove;
 	}
 	private escapeCheck = (lastMove: string): void => {
-		console.log(' entered escapeCheck');
+		// console.log(' entered escapeCheck');
 		const
 			control = Game.control,
 			checkingSide: SIDE = lastMove[0] as SIDE,
@@ -279,7 +279,7 @@ export class ComputedMove {
 	private deliverMate = (lastMove: string): IGeneratedMove => {
 	// return a move that will give check mate (or TODO a move that will definitely lead to check mate ?)
 	// NB this strategy does not bother to score all possible moves it considers due to overcomplication of code
-		console.log('deliverMate')
+		// console.log('deliverMate')
 		const
 			control = Game.control,
 			currentPlayer: SIDE = control.getCurrentPlayer(),
@@ -287,247 +287,167 @@ export class ComputedMove {
 			kpid: PID = lastPlayer + 'K',
 			kpiece: Piece = control.getPiece(kpid),
 			klegals: SQID[] = kpiece.getLegals(),
+			kaccessors: SQID[] = kpiece.getAccessors(),
 			ksqid: SQID = kpiece.getSqid(),
 			kattckng: PID[] = kpiece.getAttckng(),
-			myPidArray: PID[] = control.getPidArray(currentPlayer),
-			oppPidArray: PID[] = control.getPidArray(lastPlayer),
 			enPassant: SQID = control.getEnPassant(),
-			discoveredCheckMate = (movingPiece: Piece): IGeneratedMove => {
-				console.log('discoveredCheckMate')
+			reduceOppKingLegals = (pidto: PID_TO, legals): SQID[] => {
 				const
-					mvngPid = movingPiece.getPid(),
-					mvngLegals = movingPiece.getLegals(),
-					chkngPid: PID = movingPiece.getKShadow(),
-					chkngPiece: Piece = control.getPiece(chkngPid),
-					chkngSqid: SQID = chkngPiece.getSqid(),
-					chkngDrctn: DIRECTION = Board.getDirection(chkngSqid, ksqid),
-					squaresInDirection: SQID[] = Board.fromDirectionSquares(chkngSqid, chkngDrctn),
-					intrcptPidtos: PID_TO[] = control.interceptAlignment(kpiece, chkngSqid);
+					[chckngPid, chckngSqid] = pidto,
+					chkngDrctn: DIRECTION = Board.getDirection(chckngSqid, ksqid),
+					squaresInDirection: SQID[] = Board.fromDirectionSquares(chckngSqid, chkngDrctn);
 
-				let scoredMoves: IScoredMove[] = []
-				// rate all intercepting moves by opponenet - for this function and wider computedMove also
-				for (const [ipid, ito] of intrcptPidtos) {
-					const
-						ppid = this.promo(ipid, ito),
-						score = this.squareValueReOccupy([(ppid ? ppid : ipid), ito]);
-					scoredMoves.push({ pid: ipid, to: ito, ppid: ppid, score: score });
+				for (const sq of squaresInDirection) {
+				    const n = legals.indexOf(sq);
+				    (n >= 0) && legals.splice(n, 1);
 				}
-
-				// a discovery check may also need to cover some of the kings escaoe squares
-				let kingsLegals: SQID[] = klegals.filter(ds => { return !squaresInDirection.includes(ds); } );
-
-				if (kingsLegals.length === 0 && intrcptPidtos.length === 0) {
-					// discovered check or even double discovered check,
-					// cannot be intercepted and nowhere to run
-					// moving piece can choose any of it's legals
-					return { pid: mvngPid, to: mvngLegals[0], ppid: null };
-				}
-
-				// can the remaining squares be attacked by the moving piece?
-				let checkingMoves: SQID[] = [], rmmngKLegals: SQID[] = [];
-
-				for (const sqid of kingsLegals) {
-					const squares = Board.moveTowards(sqid, mvngLegals, movingPiece.directions);
-					if (!squares.length) {
-						rmmngKLegals.push(sqid);
-					} else {
-						checkingMoves.push(...squares);
-					}
-				}
-
-				if (!rmmngKLegals.length && checkingMoves.length) {
-					// all legals addressed so any move by discovering piece we found will do...
-					return { pid: mvngPid, to: checkingMoves[0], ppid: null };
-				}
-
-				return null;
+				return legals;
 			},
-			pinCheckMate = (pinnedPiece: Piece): IGeneratedMove => {
-				console.log('pinCheckMate');
-				for (const pnndPieceAttckrPid of pinnedPiece.getAttckrs()) {
-					const
-						pinningPid = pinnedPiece.getKPin(),
-						pinnedSqid =  pinnedPiece.getSqid();
-					let
-						chckngPiece: Piece = null,
-						chckngPid: PID = null,
-						chckngSqid: SQID = null,
-						chckngPieceAttckrs: PID[] = [],
-						pinDrctn: DIRECTION = null,
-						squaresInDirection: SQID[] = [],
-						intrcptPidtos: PID_TO[] = [],
-						mvPid: PID = null,
-						mvTo: SQID = null;
-
-					if (IS_PAWN.test(pnndPieceAttckrPid) && (pinnedSqid === enPassant)) {
-						mvPid = pnndPieceAttckrPid;
-						mvTo = (enPassant[0] + ((enPassant[1] === '4') ? '5' : '6')) as SQID;
-						chckngPiece = control.getPiece(pinningPid);
-						chckngPid = chckngPiece.getPid(),
-						chckngPieceAttckrs = chckngPiece.getAttckrs();
-						chckngSqid = chckngPiece.getSqid();
-						pinDrctn = Board.getDirection(chckngSqid, ksqid);
-					} else {
-						// missing: when moving piece no longer defends a piece next to opposing king!
-						mvPid = pnndPieceAttckrPid;
-						mvTo = pinnedSqid;
-						chckngPiece = control.getPiece(mvPid);
-						chckngPid = chckngPiece.getPid(),
-						chckngSqid = mvTo;
-						chckngPieceAttckrs = pinnedPiece.getDfndrs();
-						pinDrctn = Board.getDirection(mvTo, ksqid);
-					}
-
-					// get and use score as indicator that moving piece may be captured
-					const score = this.squareValueReOccupy([chckngPid, chckngSqid]);
-					if (score >= 0 && chckngPiece.directions.includes(pinDrctn)) {
-						squaresInDirection = Board.fromDirectionSquares(chckngSqid, pinDrctn),
-						intrcptPidtos = control.interceptAlignment(kpiece, mvTo);
-
-						let kls: SQID[] = klegals.filter(ds => { return !squaresInDirection.includes(ds); } );
-
-						if ((kls.length === 0) && (intrcptPidtos.length === 0) && (chckngPieceAttckrs.length === 0)) {
-							// discovered check, cannot be intercepted and nowhere to run
-							//moving piece can choose any of it's legals
-							return { pid: mvPid, to: mvTo, ppid: null };
-						}
-					}
-				}
-				return null;
-			},
-			assemblePidTos = (kingAccessSquares: SQID[]): PID_TO[] => {
+			kingMoveOutOfCheck = (pidto: PID_TO, shadowedPidto?: PID_TO): SQID[] => {
 				let
-					pidtos: PID_TO[] = [];
-				for (const sqid of kingAccessSquares) {  // for each opposing kings access squares
-					const drctn = Board.getDirection(sqid, ksqid)
-					for (const pid of myPidArray) { // which of my sides pieces can legally move to the access square?
+					klegals = kpiece.getLegals(),
+					mrvld: SQID[] = this.revealedSquares(pidto),
+					shrvld: SQID[] = shadowedPidto ? this.revealedSquares(shadowedPidto) : [];
+
+				klegals = reduceOppKingLegals(pidto, klegals);
+				klegals = klegals.length ? klegals.filter(sq => !mrvld.includes(sq)) : klegals;
+				if (shadowedPidto) {
+					klegals = klegals.length ? reduceOppKingLegals(shadowedPidto, klegals) : [];
+					klegals = klegals.length ? klegals.filter(sq => !shrvld.includes(sq)) : [];
+				}
+				return klegals;
+			},
+			kingEscapeByCapture = ([pid, to]): boolean => {
+				for (const attckdpid of kattckng) {
+					const
+						kattckd = control.getPiece(attckdpid),
+						dfndrs = kattckd.getDfndrs();
+					if (dfndrs.length === 1 && dfndrs.includes(pid)) {
+					// attacked piece may no longer be defended by moving piece
 						const
-							piece = control.getPiece(pid),
-							isShadowedPiece = piece.isShadowing(sqid),
-							plegals = piece.getLegals();
-						if (!IS_KING.test(pid)) {
-							if (!isShadowedPiece) {
-								if (plegals.includes(sqid) && piece.directions.includes(drctn)) {
-									if (!(IS_PAWN.test(pid) && (!ORDINALS.includes(drctn) || ksqid !== Board.nextSquare(drctn, sqid)))) {
-										pidtos.push([pid, sqid]);
-									}
-								}
-							} else {
-								for(const sqid of plegals) {
-									pidtos.push([pid, sqid]);
-								}
-							}
+						 	sq = kattckd.getSqid(),
+							d = Board.getDirection(to, sq);
+						if (Board.alignedWith(to, d) !== kattckd) { // not able to defend after move!
+							return true;
 						}
 					}
 				}
-				return pidtos;
+				return false;
 			};
 
-
+		const
+			checks: IScoredMove[] = this.deliverCheck();
 		let
-			generatedMove: IGeneratedMove = null,
-			pidtos: PID_TO[] = [];
-
-		for (const pid of myPidArray) {
-			const piece = control.getPiece(pid);
-			if (piece.getKShadow() !== null) {
-				if ((generatedMove = discoveredCheckMate(piece)) !== null) {
-					return generatedMove;
-				}
-			}
-		}
-
-		for (const pid of oppPidArray) {
-			const piece = control.getPiece(pid);
-			if (piece.getKPin() !== null) {
-				if ((generatedMove = pinCheckMate(piece)) !== null) {
-					return generatedMove;
-				}
-			}
-		}
-
-		pidtos = assemblePidTos(kpiece.getAccessors());
-		for (const pidto of pidtos) {
-			const score = this.squareValueReOccupy(pidto); // can our moved piece be captured?
-
-			if (score >= 0) {
+			score = 0,
+			shdwsqid: SQID = null,
+			ppid: PID = null,
+			scoredMoves: IScoredMove[] = [];
+		for (const check of checks) {
+			const
+				mpid = check.ppid ? check.ppid : check.pid,
+				mpiece = control.getPiece(mpid),
+				shadowing = mpiece.getKShadow(),
+				mto = check.to,
+				drctn = Board.getDirection(mto, ksqid);
+			let
+				remainingKingLegals: SQID[];
+			if (enPassant && IS_PAWN.test(mpid)) {
 				const
-					[pid, to] = pidto,
-					drctn: DIRECTION = Board.getDirection(to, ksqid),
-					intrcptPidtos: PID_TO[] = control.interceptAlignment(kpiece, to);
-
-				let
-					squaresInDirection: SQID[] = Board.fromDirectionSquares(to, drctn),
-					cpiece: Piece = control.getPiece(to),
-					enPassant: SQID = control.getEnPassant(),
-					kpin: PID;
-
-				const score = this.squareValueReOccupy([pid, to]);
-
-				// if a piece is captured...
-				if (cpiece && score <= 0) {
-					// But if defender is pinned!!!!
-					continue;    // can't be a mate in one if piece can be captured straigtaway
-				} else if (enPassant && IS_PAWN.test(pid)) {
-					const
-						eppiece = control.getPiece(enPassant),
-						rank = enPassant[1],
-						pdrctn = (rank === '4') ? DIRECTION.S : DIRECTION.N,
-						epCaptureSqid = Board.nextSquare(pdrctn, enPassant);
-					if (epCaptureSqid === to) {
-						 kpin = eppiece.getKPin();
-						 if (kpin) {
+					eppiece = control.getPiece(enPassant),
+					rank = enPassant[1],
+					pdrctn = (rank === '4') ? DIRECTION.S : DIRECTION.N,
+					captureEpSqid = Board.nextSquare(pdrctn, enPassant);
+				if (captureEpSqid === mto) { // capture enpassant
+					 const kpin = eppiece.getKPin();
+					 if (kpin) {
+						 const
+							dscvrdPiece = control.getPiece(kpin);
+						 if (dscvrdPiece.getAttckrs().length === 0) {
+							 // one could consider this an ideal situation
 							 const
-								dscvrdPiece = control.getPiece(kpin),
-								dscvrdSqid = dscvrdPiece.getSqid(),
-								dir = Board.getDirection(dscvrdSqid, ksqid);
-							 if (Board.alignedWith(dscvrdSqid, dir) === kpiece) {
-								 squaresInDirection = Board.fromDirectionSquares(dscvrdSqid, dir);
-								 let kls: SQID[] = klegals.filter(ds => { return !squaresInDirection.includes(ds); } );
-								 if (kls.length === 0 && intrcptPidtos.length === 0) {
-									 // discovered check, cannot be intercepted and nowhere to run
-									 //moving piece can choose any of it's legals
-									 generatedMove = { pid: pid, to: to, ppid: null };
-									 break;
-								 }
-							 }
-						 }
+							 	drctn = Board.getDirection(enPassant, ksqid),
+								squaresInDirection = Board.fromDirectionSquares(enPassant, drctn);
+							let
+								klgls: SQID[] = klegals.filter(ds => !squaresInDirection.includes(ds));
+							if (klgls.length === 0) {
+							 // discovered check, maybe interceptable but nowhere to run
+								 ppid = this.promo(mpid, mto);
+								 return { pid: mpid, to: mto, ppid: ppid }
+							}
+						}
 					}
-				} else {
-					let
-						kls: SQID[] = klegals.filter(ds => { return !squaresInDirection.includes(ds); }),
-						revealed = this.revealedSquares(pidto);
+				}
+			} else if (!mpiece.isPinned(mto)) {
+				const
+					chckng = mpiece.getStep()
+							? Board.nextSquare(drctn, mto) === ksqid
+							: kaccessors.includes(mto);
 
-					kls = kls.filter(ds => { return !revealed.includes(ds); });
-
-					if (kls.length === 0 && intrcptPidtos.length === 0) {
-						let safe = true;
-						for (const attckdpid of kattckng) {
-							const
-								kattckd = control.getPiece(attckdpid),
-								dfndrs = kattckd.getDfndrs();
-							if (dfndrs.length === 1 && dfndrs.includes(pid)) {
-							// the king has no legal places to go but an attacked piece may no longer be defended
-								const d = Board.getDirection(to, kattckd.getSqid());
-								if (Board.alignedWith(to, d) !== kattckd) { // not able to defend after move!
-									safe = false;
-								}
+				if (chckng && shadowing) {
+					// double check, can king escape?
+					shdwsqid = control.getPiece(shadowing).getSqid();
+					if ((remainingKingLegals = kingMoveOutOfCheck([mpid, mto], [shadowing, shdwsqid])).length === 0) {
+						if (!kingEscapeByCapture([mpid, mto])) {
+							ppid = this.promo(mpid, mto);
+							return { pid: mpid, to: mto, ppid: ppid };
+						}
+					}
+				} else if (chckng) {
+					// can king escape, can piece be taken, can check be intercepted?
+					if ((remainingKingLegals = kingMoveOutOfCheck([mpid, mto])).length === 0) {
+						if (!kingEscapeByCapture([mpid, mto])) {
+							ppid = this.promo(mpid, mto);
+							score = this.squareValueReOccupy([(ppid ? ppid : mpid), mto]);
+							scoredMoves.push({ pid: mpid, to: mto, ppid: ppid, score: score });
+						}
+					}
+				} else if (shadowing) {
+					// can king escape, can piece be taken, can check be intercepted?
+					shdwsqid = control.getPiece(shadowing).getSqid();
+					if ((remainingKingLegals = kingMoveOutOfCheck([shadowing, shdwsqid])).length === 0) {
+						if (!kingEscapeByCapture([mpid, mto])) {
+							ppid = this.promo(mpid, mto);
+							score = this.squareValueReOccupy([(ppid ? ppid : mpid), mto]);
+							scoredMoves.push({ pid: mpid, to: mto, ppid: ppid, score: score });
+						}
+					} else { // legals remain even after klegals reduction by shadowed piece
+						// can the remaining squares be attacked by the moving piece?
+						let
+							chckngMoves: SQID[] = [],
+							rmngklgls: SQID[] = [];
+						for (const sqid of remainingKingLegals) { // ???????
+							const squares = Board.moveTowards(sqid, mpiece.getLegalPositions(), mpiece.directions);
+							if (!squares.length) {
+								rmngklgls.push(sqid);
+							} else {
+								chckngMoves.push(...squares);
 							}
 						}
 
-						if (safe) {
-							generatedMove = { pid: pid, to: to, ppid: null };
-							break;
+						if (!rmngklgls.length && chckngMoves.length) {
+							// all legals addressed so any move by discovering piece we found will do...
+							for (const chksq of chckngMoves) {
+								ppid = this.promo(mpid, chksq);
+								score = this.squareValueReOccupy([(ppid ? ppid : mpid), chksq]);
+								scoredMoves.push({ pid: mpid, to: chksq, ppid: ppid, score: score });
+							}
 						}
 					}
 				}
 			}
 		}
 
-		return generatedMove; // maybe null
+		const sortedMoves = scoredMoves.sort((a: IScoredMove, b: IScoredMove) => { return b.score - a.score; });
+
+		if (sortedMoves.length && sortedMoves[0].score >= 0) {
+			const mv = sortedMoves[0];
+			return { pid: mv.pid, to: mv.to, ppid: null };
+		}
+
+		return null;
 	}
 	private considerCaptures = (): IGeneratedMove => {
-		console.log(' entered considerCaptures');
+		// console.log(' entered considerCaptures');
 		const
 			escapeCapture: IScoredMove = this.escapeCapture(),
 			tryCapture: IScoredMove = this.tryCapture(),
@@ -538,7 +458,7 @@ export class ComputedMove {
 		return (move && move.score >= 0) ? { pid: move.pid, to: move.to, ppid: move.ppid } : null;
 	}
 	private tryCapture = (): IScoredMove => {
-		console.log(' entered tryCapture');
+		// console.log(' entered tryCapture');
 		const
 			control = Game.control,
 			currentPlayer: SIDE = control.getCurrentPlayer(),
@@ -586,7 +506,7 @@ export class ComputedMove {
 		return scoredMove;
 	}
 	private escapeCapture = (): IScoredMove => {
-		console.log(' entered escapeCapture');
+		// console.log(' entered escapeCapture');
 		const
 			control = Game.control,
 			currentPlayer: SIDE = control.getCurrentPlayer(),
@@ -629,7 +549,7 @@ export class ComputedMove {
 	private kingHunt = (): IGeneratedMove => {
 		// if the opponent king has no legal positions, find a way to attack it,
 		// otherwise can the kings legal positions be reduced.
-		console.log(' entered kingHunt');
+		// console.log(' entered kingHunt');
 		const
 			control = Game.control,
 			currentPlayer = control.getCurrentPlayer(),
@@ -694,27 +614,27 @@ export class ComputedMove {
 		}
 		return computedMove;
 	}
-	private defendPieceOnSqid = ([apid, to]: PID_TO): IScoredMove => {
-		console.log(' entered defendPieceOnSqid');
+	private defendPieceOnSqid = ([opid, to]: PID_TO): IScoredMove => {
+		// console.log(' entered defendPieceOnSqid');
 		// if (apid==='WKB' && to==='d7') {
 		// 	console.log('bingo');
 		// }
 		const
 			control = Game.control,
-			attackedPid = control.getPid(to),
-			attackedPiece = control.getPiece(attackedPid),
-			legals: SQID[] = attackedPiece.getLegals(),
-			attackedAttckrs: PID[] = attackedPiece.getAttckrs(),
+			mypid = control.getPid(to),
+			myPiece = control.getPiece(mypid),
+			legals: SQID[] = myPiece.getLegals(),
+			attackedAttckrs: PID[] = myPiece.getAttckrs(),
 			ep = control.getEnPassant();
 
 		let scoredMoves: IScoredMove[] = [];
 
 		if (attackedAttckrs.length === 1) {
 			const
-				attckrPiece = control.getPiece(apid),
+				attckrPiece = control.getPiece(opid),
 				attckrAttckrs = attckrPiece.getAttckrs(),
 				intrcptPidtos = // cannot be intercepted if attacking piece is a Knight
-					!IS_KNIGHT.test(apid) ? control.interceptAlignment(attackedPiece, attckrPiece.getSqid()) : [];
+					!IS_KNIGHT.test(opid) ? control.interceptAlignment(myPiece, attckrPiece.getSqid()) : [];
 
 			for (const ccpid of attckrAttckrs) {
 				const ccpiece = control.getPiece(ccpid);
@@ -743,9 +663,9 @@ export class ComputedMove {
 		}
 
 		for (const sqid of legals) {
-			if (attackedPiece.isPinned(sqid)) { continue; }
-			const lscore = this.squareValueReOccupy([attackedPid, sqid]);
-			scoredMoves.push({ pid: attackedPid, to: sqid, ppid: null, score: lscore });
+			if (myPiece.isPinned(sqid)) { continue; }
+			const lscore = this.squareValueReOccupy([mypid, sqid]);
+			scoredMoves.push({ pid: mypid, to: sqid, ppid: null, score: lscore });
 		}
 
 		scoredMoves.sort(this.rankByLowestScore);
@@ -754,12 +674,12 @@ export class ComputedMove {
 			// defend against highest scored attack
 			// either move out of attack, take attacking piece or intercept the attack
 			return mv;
-		} else if (!IS_KING.test(apid)) {
+		} else if (!IS_KING.test(opid)) {
 			// can't take the attacker, can't intercept, can't move attacked piece
 			// can attacked be supported? NNB is not an option if attacked piece is King
 			const
-				movingSidePids: PID[] = control.getPidArray(attackedPid[0] as SIDE),
-				attckAccessors = attackedPiece.getAccessors();
+				movingSidePids: PID[] = control.getPidArray(mypid[0] as SIDE),
+				attckAccessors = myPiece.getAccessors();
 			for (const sqid of attckAccessors) {
 				 for (const mpid of movingSidePids) {
 					const mpiece = control.getPiece(mpid);
@@ -920,8 +840,8 @@ export class ComputedMove {
 
 		return revealedSqids;
 	}
-	private deliverCheck = (): IGeneratedMove => {
-		console.log(' entered deliverCheck');
+	private deliverCheck = (): IScoredMove[] => {
+		// console.log(' entered deliverCheck');
 		const
 			control = Game.control,
 			currentPlayer: SIDE = control.getCurrentPlayer(),
@@ -929,34 +849,55 @@ export class ComputedMove {
 			kpid: PID = oppPlayer + 'K',
 			kpiece: Piece = control.getPiece(kpid),
 			ksqid: SQID = kpiece.getSqid(),
-			kaccesSqrs: SQID[] = kpiece.getAccessors(),
-			pidArray: PID[] = control.getPidArray(currentPlayer);
+			kaccessors: SQID[] = kpiece.getAccessors(),
+			myPids: PID[] = control.getPidArray(currentPlayer),
+			enPassant: SQID = control.getEnPassant();
 
 		let
 			pidtos: string[] = [],
-			scoredMoves: IScoredMove[] = [];
-
-
-		for (const sqid of kaccesSqrs) {  // for each opposing kings access squares
+			strfyPidTo: string;
+		for (const sqid of kaccessors) {  // for each of the opposing kings access squares
 			const drctn = Board.getDirection(sqid, ksqid)
-			for (const pid of pidArray) { // which of my sides pieces can legally move to the access square?
+			for (const mpid of myPids) { // which of my sides pieces can legally move to the access square?
 				const
-					piece = control.getPiece(pid),
-					isShadowedPiece = piece.isShadowing(sqid),
-					plegals = piece.getLegals();
-				if (!IS_KING.test(pid)) {
-					if (!isShadowedPiece) {
-						if (plegals.includes(sqid) && piece.directions.includes(drctn)) {
-							if (!(IS_PAWN.test(pid) && (!ORDINALS.includes(drctn) || ksqid !== Board.nextSquare(drctn, sqid)))) {
-								const strfyPidTo = JSON.stringify([pid, sqid]);
+					mpiece = control.getPiece(mpid),
+					shadowing = mpiece.isShadowing(sqid),
+					mlegals = mpiece.getLegals();
+
+				if (!mlegals.includes(sqid) || mpiece.isPinned(sqid)) {
+					continue;
+				}
+
+				strfyPidTo = null;
+				if (enPassant && IS_PAWN.test(mpid)) {
+					const
+						eppiece = control.getPiece(enPassant),
+						rank = enPassant[1],
+						pdrctn = (rank === '4') ? DIRECTION.S : DIRECTION.N,
+						captureEpSqid = Board.nextSquare(pdrctn, enPassant);
+					if (captureEpSqid === sqid) { // capture enpassant
+						const kpin = eppiece.getKPin();
+						if (kpin) {
+							strfyPidTo = JSON.stringify([mpid, sqid]);
+							pidtos.push(strfyPidTo);
+						 }
+					}
+				} else if (!IS_KING.test(mpid)) {
+					if (!shadowing) {
+						if (mpiece.directions.includes(drctn)) {
+							if (!(IS_PAWN.test(mpid) && (!ORDINALS.includes(drctn)
+									|| ksqid !== Board.nextSquare(drctn, sqid)))) {
+								strfyPidTo = JSON.stringify([mpid, sqid]);
 								pidtos.push(strfyPidTo);
 							}
 						}
 					} else {
-						for (const sq of plegals) {
-							const pidto = JSON.stringify([pid, sq]);
-							if (!pidtos.includes(pidto)) {
-								pidtos.push(pidto);
+						for (const shsqid of mlegals) {
+							if (!mpiece.isPinned(shsqid)) {
+								strfyPidTo = JSON.stringify([mpid, shsqid]);
+								if (!pidtos.includes(strfyPidTo)) {
+									pidtos.push(strfyPidTo);
+								}
 							}
 						}
 					}
@@ -965,6 +906,8 @@ export class ComputedMove {
 		}
 
 
+		let
+			scoredChecks: IScoredMove[] = [];
 		for (const pidto of pidtos) {
 			const
 				[pid, to] = JSON.parse(pidto),
@@ -974,18 +917,10 @@ export class ComputedMove {
 				const
 					ppid = this.promo(pid, to),
 					score = this.squareValueReOccupy([(ppid ? ppid : pid), to]);
-				scoredMoves.push({ pid: pid, to: to, ppid: ppid, score: score });
+				scoredChecks.push({ pid: pid, to: to, ppid: ppid, score: score });
 			}
 		}
 
-		let generatedMove: IGeneratedMove = null;
-		if (scoredMoves.length) {
-			scoredMoves.sort(this.rankByLowestScore);
-			let mv = scoredMoves[0];
-			if (mv.score >= 0) { // must be some advantage
-				generatedMove = { pid: mv.pid, to: mv.to, ppid: mv.ppid };
-			}
-		}
-		return generatedMove;
+		return scoredChecks;
 	}
 }
